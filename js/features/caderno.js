@@ -214,11 +214,59 @@ function renderRootCadernosView() {
 
 // Main function to control the rendering of the "Cadernos" tab view.
 export async function renderFoldersAndCadernos() {
+    // ===== INÍCIO DA MODIFICAÇÃO: Remove o card de info da pasta se existir =====
+    const existingCard = document.getElementById('folder-info-card');
+    if (existingCard) {
+        existingCard.remove();
+    }
+    // ===== FIM DA MODIFICAÇÃO =====
+
     DOM.savedCadernosListContainer.innerHTML = '';
 
     if (state.currentCadernoId) {
         await renderCadernoContentView();
     } else if (state.currentFolderId) {
+        // ===== INÍCIO DA MODIFICAÇÃO: Adiciona o card de info da pasta =====
+        const folder = state.userFolders.find(f => f.id === state.currentFolderId);
+        if (folder) {
+            const count = state.userCadernos.filter(c => c.folderId === folder.id).length;
+            const cardHtml = `
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border-b border-gray-200">
+                <div class="flex justify-between items-center">
+                    <!-- Lado Esquerdo: Ícone, Nome, Opções -->
+                    <div class="flex items-center">
+                        <i class="fas fa-folder text-yellow-500 text-xl mr-3"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold text-blue-600">${folder.name}</h3>
+                            <div class="text-sm">
+                                <!-- Botões com classes de delegação -->
+                                <button class="text-blue-600 hover:underline font-medium p-0 edit-folder-btn" data-id="${folder.id}" data-name="${folder.name}">Renomear</button>
+                                <span class="text-gray-300 mx-1">•</span>
+                                <button class="text-red-500 hover:underline font-medium p-0 delete-folder-btn" data-id="${folder.id}" data-name="${folder.name}">Excluir</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Lado Direito: Contagem e Menu -->
+                    <div class="flex items-center space-x-3">
+                        <span class="text-sm text-gray-500">${count} cadernos</span>
+                        <button class="text-gray-400 hover:text-gray-600 p-1 rounded-full">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+            // Cria um elemento temporário para o HTML e o insere
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = cardHtml.trim();
+            const cardElement = tempDiv.firstChild;
+            cardElement.id = 'folder-info-card'; // ID para remoção futura
+
+            // Insere o card ANTES do container da lista de cadernos
+            DOM.savedCadernosListContainer.before(cardElement);
+        }
+        // ===== FIM DA MODIFICAÇÃO =====
+
         renderFolderContentView();
     } else {
         renderRootCadernosView();
@@ -247,21 +295,9 @@ export function handleFolderItemClick(event) {
         return;
     }
 
-    // Handle editing
-    if (event.target.closest('.edit-folder-btn')) {
-        openNameModal('folder', folderId, folder.name);
-        return;
-    }
-    
-    // Handle deleting
-    if (event.target.closest('.delete-folder-btn')) {
-        setState('deletingId', folderId);
-        setState('deletingType', 'folder');
-        DOM.confirmationModalTitle.textContent = `Excluir Pasta`;
-        DOM.confirmationModalText.innerHTML = `Deseja excluir a pasta <strong>"${folder.name}"</strong>? <br><br> <span class="font-bold text-red-600">Todos os cadernos dentro dela também serão excluídos.</span>`;
-        DOM.confirmationModal.classList.remove('hidden');
-        return;
-    }
+    // ===== INÍCIO DA MODIFICAÇÃO: Lógica de editar/excluir movida para event-listeners.js =====
+    // O código de 'edit-folder-btn' e 'delete-folder-btn' foi removido daqui.
+    // ===== FIM DA MODIFICAÇÃO =====
 }
 
 // Handles clicks on notebook items to open them, edit, delete, or view stats.
@@ -294,21 +330,9 @@ export function handleCadernoItemClick(event) {
         return;
     }
     
-    // Handle editing
-    if (event.target.closest('.edit-caderno-btn')) {
-        openNameModal('caderno', cadernoId, caderno.name);
-        return;
-    }
-    
-    // Handle deleting
-    if (event.target.closest('.delete-caderno-btn')) {
-        setState('deletingId', cadernoId);
-        setState('deletingType', 'caderno');
-        DOM.confirmationModalTitle.textContent = `Excluir Caderno`;
-        DOM.confirmationModalText.innerHTML = `Deseja excluir o caderno <strong>"${caderno.name}"</strong>?`;
-        DOM.confirmationModal.classList.remove('hidden');
-        return;
-    }
+    // ===== INÍCIO DA MODIFICAÇÃO: Lógica de editar/excluir movida para event-listeners.js =====
+    // O código de 'edit-caderno-btn' e 'delete-caderno-btn' foi removido daqui.
+    // ===== FIM DA MODIFICAÇÃO =====
 }
 
 // Handles the "Back" button to navigate up the folder/notebook hierarchy.
