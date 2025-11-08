@@ -171,16 +171,24 @@ function renderFolderContentView() {
     // 3. Renderiza Subpastas primeiro, cada uma com seus cadernos filhos
     subfolders.forEach(subfolder => {
         // Renderiza a linha da subpasta
+        // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
         html += `
         <div class="folder-item-container" data-folder-id="${subfolder.id}">
             <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${subfolder.id}">
-                <!-- Left: Icon + Name (clickable to open) -->
-                <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;">
-                    <!-- Ícone de expandir -->
-                    <i class="fas fa-chevron-right toggle-folder-contents text-gray-400 w-4 text-center mr-2 cursor-pointer transition-transform duration-200"></i>
+                <!-- Left: Icon + Name (NÃO é mais clicável para entrar) -->
+                <div class="flex items-center flex-grow" style="min-width: 0;"> <!-- REMOVIDO: data-action="open" e cursor-pointer -->
+                    <!-- Ícone de expandir (chevron) REMOVIDO -->
                     <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
                     <span class="font-medium text-gray-800 truncate" title="${subfolder.name}">${subfolder.name}</span>
+                    <!-- ADICIONADO: Texto de expandir/recolher -->
+                    <span class="toggle-folder-contents text-blue-600 hover:underline text-sm ml-2 cursor-pointer whitespace-nowrap" 
+                          data-folder-id="${subfolder.id}"
+                          data-text-expand="(Expandir)"
+                          data-text-collapse="(Recolher)">
+                        (Expandir)
+                    </span>
                 </div>
+                <!-- ===== FIM DA MODIFICAÇÃO ===== -->
                 
                 <!-- Middle: Question Count -->
                 <div class="flex-shrink-0 mx-4">
