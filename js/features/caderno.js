@@ -190,7 +190,8 @@ function renderFolderContentView() {
 
     // Esconde/Mostra botões com base no modo de mover
     DOM.backToFoldersBtn.classList.remove('hidden');
-    DOM.addCadernoToFolderBtn.classList.toggle('hidden', isMoveMode);
+    // MODIFICAÇÃO: Botão "Adicionar Caderno" agora fica visível
+    DOM.addCadernoToFolderBtn.classList.remove('hidden');
     // DOM.createFolderBtn.classList.toggle('hidden', isMoveMode); // MODIFICADO ABAIXO
     DOM.createFolderBtn.classList.add('hidden'); // Sempre escondido dentro da pasta
     DOM.addQuestionsToCadernoBtn.classList.add('hidden');
@@ -411,9 +412,9 @@ export async function renderFoldersAndCadernos() {
             const count = state.userCadernos.filter(c => c.folderId === folder.id).length;
             // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
             // Adicionado ID ao botão de menu, classe 'relative' ao container e o HTML do dropdown
-            // Adicionada lógica para esconder no modo "Mover"
+            // MODIFICAÇÃO: Removida a classe 'hidden' condicional (state.isMoveModeActive)
             const cardHtml = `
-            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border-b border-gray-200 ${state.isMoveModeActive ? 'hidden' : ''}">
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border-b border-gray-200">
                 <div class="flex justify-between items-center">
                     <!-- Lado Esquerdo: Ícone, Nome, Opções -->
                     <div class="flex items-center">
@@ -817,4 +818,3 @@ export async function confirmMoveSelectedItems() {
     cancelMoveMode(); // Sai do modo de mover e re-renderiza
 }
 // ===== FIM DA MODIFICAÇÃO =====
-
