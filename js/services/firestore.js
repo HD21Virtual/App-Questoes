@@ -310,14 +310,25 @@ export async function createCaderno(name, questionIds, folderId) {
     await addDoc(cadernosCollection, caderno);
 }
 
-export async function createOrUpdateName(type, name, id = null) {
+// ===== INÍCIO DA MODIFICAÇÃO: Aceita parentId para subpastas =====
+export async function createOrUpdateName(type, name, id = null, parentId = null) {
+// ===== FIM DA MODIFICAÇÃO =====
     if (id) {
+        // --- Lógica de Edição (Renomear) ---
         const collectionPath = type === 'folder' ? 'folders' : 'cadernos';
         const itemRef = doc(db, 'users', state.currentUser.uid, collectionPath, id);
+        // Atualiza apenas o nome, preservando outros campos (como parentId)
         await updateDoc(itemRef, { name: name });
     } else {
+        // --- Lógica de Criação (Novo Item) ---
         if (type === 'folder') {
-            const folderData = { name: name, createdAt: serverTimestamp() };
+            // ===== INÍCIO DA MODIFICAÇÃO: Adiciona parentId ao criar pasta =====
+            const folderData = { 
+                name: name, 
+                createdAt: serverTimestamp(),
+                parentId: parentId || null // Define parentId (null para pastas raiz)
+            };
+            // ===== FIM DA MODIFICAÇÃO =====
             const foldersCollection = collection(db, 'users', state.currentUser.uid, 'folders');
             await addDoc(foldersCollection, folderData);
         }
@@ -493,8 +504,41 @@ export async function deleteItem(type, id) {
             const cadernoRef = doc(db, 'users', state.currentUser.uid, 'cadernos', caderno.id);
             batch.delete(cadernoRef);
         });
-        const folderRef = doc(db, 'users', state.currentUser.uid, 'folders', id);
-        batch.delete(folderRef);
+        
+        // ===== INÍCIO DA MODIFICAÇÃO: Excluir subpastas recursivamente =====
+        // Precisamos encontrar todas as subpastas desta pasta e excluí-las também
+        const allFolders = state.userFolders;
+        const foldersToDeleteIds = new Set([id]);
+        let changed = true;
+
+        // Encontra todas as subpastas descendentes
+        while (changed) {
+            changed = false;
+            allFolders.forEach(folder => {
+                if (folder.parentId && foldersToDeleteIds.has(folder.parentId) && !foldersToDeleteIds.has(folder.id)) {
+                    foldersToDeleteIds.add(folder.id);
+                    changed = true;
+                }
+            });
+        }
+        
+        // Exclui todos os cadernos dentro de todas as pastas a serem excluídas
+        const allCadernosToDelete = state.userCadernos.filter(c => foldersToDeleteIds.has(c.folderId));
+        allCadernosToDelete.forEach(caderno => {
+            // Garante que não estamos adicionando ao batch duas vezes
+            if (!cadernosToDelete.find(c => c.id === caderno.id)) {
+                 const cadernoRef = doc(db, 'users', state.currentUser.uid, 'cadernos', caderno.id);
+                 batch.delete(cadernoRef);
+            }
+        });
+
+        // Exclui todas as pastas (raiz e subpastas)
+        foldersToDeleteIds.forEach(folderId => {
+            const folderRef = doc(db, 'users', state.currentUser.uid, 'folders', folderId);
+            batch.delete(folderRef);
+        });
+        // ===== FIM DA MODIFICAÇÃO =====
+
         await batch.commit();
 
     } else if (type === 'caderno') {
