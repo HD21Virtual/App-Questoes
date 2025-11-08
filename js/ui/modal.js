@@ -1,7 +1,10 @@
 import DOM from '../dom-elements.js';
 import { state, setState } from '../state.js';
-// --- MODIFICAÇÃO: Importar resetAllUserData ---
+// ===== INÍCIO DA MODIFICAÇÃO: Importar updateDoc, doc, db =====
 import { deleteItem, deleteFilter, getHistoricalCountsForQuestions, resetAllUserData } from '../services/firestore.js';
+import { updateDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { db } from '../firebase-config.js';
+// ===== FIM DA MODIFICAÇÃO =====
 import { renderItemPerformanceChart } from './charts.js';
 
 export function openAuthModal() {
@@ -99,7 +102,104 @@ export function closeSubfolderModal() {
     if (DOM.subfolderModal) DOM.subfolderModal.classList.add('hidden');
     if (DOM.subfolderNameInput) DOM.subfolderNameInput.value = '';
 }
+
+// NOVO: Funções do Modal "Mover"
+export function openMoveModal(cadernoId) {
+    if (!state.currentUser || !cadernoId) return;
+
+    setState('movingCadernoId', cadernoId);
+    
+    // 1. Popula o select de Pastas Raiz
+    if (DOM.moveFolderSelect) {
+        DOM.moveFolderSelect.innerHTML = '<option value="">-- Raiz --</option>'; // Opção para mover para a raiz
+        
+        // Filtra apenas pastas raiz (sem parentId) e ordena
+        const rootFolders = state.userFolders
+            .filter(f => !f.parentId)
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+        rootFolders.forEach(folder => {
+            const option = document.createElement('option');
+            option.value = folder.id;
+            option.textContent = folder.name;
+            DOM.moveFolderSelect.appendChild(option);
+        });
+    }
+
+    // 2. Reseta o select de Subpastas
+    if (DOM.moveSubfolderSelect) {
+        DOM.moveSubfolderSelect.innerHTML = '<option value="">--</option>';
+        DOM.moveSubfolderSelect.disabled = true; // Desabilita até uma pasta raiz ser selecionada
+    }
+
+    // 3. Mostra o modal
+    if (DOM.moveModal) DOM.moveModal.classList.remove('hidden');
+}
+
+export function closeMoveModal() {
+    if (DOM.moveModal) DOM.moveModal.classList.add('hidden');
+    setState('movingCadernoId', null);
+}
+
+/**
+ * Popula o dropdown de subpastas com base na pasta raiz selecionada.
+ */
+export function populateMoveSubfolders() {
+    const selectedFolderId = DOM.moveFolderSelect.value;
+    
+    if (DOM.moveSubfolderSelect) {
+        DOM.moveSubfolderSelect.innerHTML = '<option value="">--</option>'; // "--" significa mover PARA a pasta raiz selecionada
+
+        if (selectedFolderId) {
+            // Se uma pasta raiz foi selecionada, busca as subpastas dela
+            const subfolders = state.userFolders
+                .filter(f => f.parentId === selectedFolderId)
+                .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+            
+            subfolders.forEach(subfolder => {
+                const option = document.createElement('option');
+                option.value = subfolder.id;
+                option.textContent = subfolder.name;
+                DOM.moveSubfolderSelect.appendChild(option);
+            });
+            
+            DOM.moveSubfolderSelect.disabled = false; // Habilita o select
+        } else {
+            // Se "Raiz" foi selecionada, o select de subpastas fica desabilitado
+            DOM.moveSubfolderSelect.disabled = true;
+        }
+    }
+}
+
+/**
+ * Executa a lógica de mover o caderno no Firestore.
+ */
+export async function handleConfirmMove() {
+    const { movingCadernoId, currentUser } = state;
+    if (!currentUser || !movingCadernoId) return;
+
+    const subfolderId = DOM.moveSubfolderSelect.value;
+    const folderId = DOM.moveFolderSelect.value;
+
+    // A pasta de destino é a subpasta (se selecionada) ou a pasta raiz (se selecionada).
+    // Se "Raiz" (folderId = "") for selecionada, targetFolderId será null.
+    const targetFolderId = subfolderId || folderId || null;
+
+    try {
+        const cadernoRef = doc(db, 'users', currentUser.uid, 'cadernos', movingCadernoId);
+        await updateDoc(cadernoRef, {
+            folderId: targetFolderId
+        });
+        console.log(`Caderno ${movingCadernoId} movido para a pasta ${targetFolderId}`);
+    } catch (error) {
+        console.error("Erro ao mover caderno:", error);
+        // TODO: Mostrar um modal de erro para o usuário
+    }
+
+    closeMoveModal();
+}
 // ===== FIM DA MODIFICAÇÃO =====
+
 
 export function closeConfirmationModal() {
     if (DOM.confirmationModal) DOM.confirmationModal.classList.add('hidden');
