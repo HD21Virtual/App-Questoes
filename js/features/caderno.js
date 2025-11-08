@@ -199,103 +199,104 @@ function renderFolderContentView() {
     // DOM.toggleMoveModeBtn.classList.remove('hidden'); // REMOVIDO
     // ===== FIM DA MODIFICAÇÃO =====
 
-    // 1. Get Subfolders
+    // ===== INÍCIO DA MODIFICAÇÃO: Ordenação alfanumérica de subpastas e cadernos =====
+    // 1. Get Subfolders e mapeia
     const subfolders = state.userFolders
         .filter(f => f.parentId === state.currentFolderId)
-        .sort(naturalSort);
+        .map(f => ({ ...f, type: 'folder' })); // Adiciona o tipo
 
-    // 2. Get Cadernos nesta pasta
+    // 2. Get Cadernos nesta pasta e mapeia
     const cadernosInThisFolder = state.userCadernos
         .filter(c => c.folderId === state.currentFolderId)
-        .sort(naturalSort);
+        .map(c => ({ ...c, type: 'caderno' })); // Adiciona o tipo
     
+    // 3. Combina e ordena alfanumericamente pelo nome
+    const combinedItems = [...subfolders, ...cadernosInThisFolder]
+        .sort((a, b) => naturalSort(a.name, b.name));
+    // ===== FIM DA MODIFICAÇÃO =====
+
     let html = '';
 
-    if (subfolders.length === 0 && cadernosInThisFolder.length === 0) {
+    if (combinedItems.length === 0) {
         DOM.savedCadernosListContainer.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-lg shadow-sm">Nenhum caderno ou subpasta aqui. Clique em "Adicionar Caderno" ou use o menu para criar uma subpasta.</p>';
         return;
     }
     
     html += '<div class="bg-white rounded-lg shadow-sm">';
 
-    // 3. Renderiza Subpastas primeiro, cada uma com seus cadernos filhos
-    subfolders.forEach(subfolder => {
-        // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-        // **NOVO**: Verifica se este item deve ser pré-selecionado
-        const isPreselected = state.itemToPreselectOnMove && 
-                              state.itemToPreselectOnMove.type === 'folder' && 
-                              state.itemToPreselectOnMove.id === subfolder.id;
-        // ===== FIM DA MODIFICAÇÃO =====
+    // ===== INÍCIO DA MODIFICAÇÃO: Renderiza a lista combinada e ordenada =====
+    combinedItems.forEach(item => {
+        if (item.type === 'folder') {
+            // --- Início da lógica de renderização da subpasta (copiada de antes) ---
+            const subfolder = item;
+            // **NOVO**: Verifica se este item deve ser pré-selecionado
+            const isPreselected = state.itemToPreselectOnMove && 
+                                  state.itemToPreselectOnMove.type === 'folder' && 
+                                  state.itemToPreselectOnMove.id === subfolder.id;
 
-        // Renderiza a linha da subpasta
-        // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-        html += `
-        <div class="folder-item-container" data-folder-id="${subfolder.id}">
-            <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${subfolder.id}">
-                <!-- Left: Checkbox (Move Mode) + Icon + Name -->
-                <div class="flex items-center flex-grow" style="min-width: 0;">
-                    <!-- Checkbox (visível apenas no modo Mover) -->
-                    <div class="checkbox-container ${isMoveMode ? 'flex' : 'hidden'} items-center pr-3">
-                        <!-- ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) ===== -->
-                        <input type="checkbox" class="move-item-checkbox rounded" data-id="${subfolder.id}" data-type="folder" ${isPreselected ? 'checked' : ''}>
-                        <!-- ===== FIM DA MODIFICAÇÃO ===== -->
+            html += `
+            <div class="folder-item-container" data-folder-id="${subfolder.id}">
+                <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${subfolder.id}">
+                    <!-- Left: Checkbox (Move Mode) + Icon + Name -->
+                    <div class="flex items-center flex-grow" style="min-width: 0;">
+                        <!-- Checkbox (visível apenas no modo Mover) -->
+                        <div class="checkbox-container ${isMoveMode ? 'flex' : 'hidden'} items-center pr-3">
+                            <input type="checkbox" class="move-item-checkbox rounded" data-id="${subfolder.id}" data-type="folder" ${isPreselected ? 'checked' : ''}>
+                        </div>
+                        
+                        <div class="flex items-center flex-grow" style="min-width: 0;">
+                            <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
+                            <span class="font-medium text-gray-800 truncate" title="${subfolder.name}">${subfolder.name}</span>
+                            <!-- ADICIONADO: Texto de expandir/recolher (escondido no modo mover) -->
+                            <span class="toggle-folder-contents text-blue-600 hover:underline text-sm ml-2 cursor-pointer whitespace-nowrap ${isMoveMode ? 'hidden' : ''}" 
+                                  data-folder-id="${subfolder.id}"
+                                  data-text-expand="(Expandir)"
+                                  data-text-collapse="(Recolher)">
+                                (Expandir)
+                            </span>
+                        </div>
                     </div>
                     
-                    <!-- ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) ===== -->
-                    <!-- Removido 'data-action="open"' e a classe 'cursor-pointer' -->
-                    <!-- para que as subpastas não sejam clicáveis para "entrar". -->
-                    <!-- Apenas o botão (Expandir) funcionará. -->
-                    <div class="flex items-center flex-grow" style="min-width: 0;">
-                    <!-- ===== FIM DA MODIFICAÇÃO ===== -->
-                        <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
-                        <span class="font-medium text-gray-800 truncate" title="${subfolder.name}">${subfolder.name}</span>
-                        <!-- ADICIONADO: Texto de expandir/recolher (escondido no modo mover) -->
-                        <span class="toggle-folder-contents text-blue-600 hover:underline text-sm ml-2 cursor-pointer whitespace-nowrap ${isMoveMode ? 'hidden' : ''}" 
-                              data-folder-id="${subfolder.id}"
-                              data-text-expand="(Expandir)"
-                              data-text-collapse="(Recolher)">
-                            (Expandir)
-                        </span>
+                    <!-- Middle: Question Count (escondido no modo mover) -->
+                    <div class="flex-shrink-0 mx-4 ${isMoveMode ? 'hidden' : 'flex'}">
+                        <span class="text-sm text-gray-500 whitespace-nowrap">${state.userCadernos.filter(c => c.folderId === subfolder.id).length} caderno(s)</span>
+                    </div>
+
+                    <!-- Right: Menu (escondido no modo mover) -->
+                    <div class="relative flex-shrink-0 ${isMoveMode ? 'hidden' : 'flex'}">
+                        <button class="folder-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-folder-id="${subfolder.id}">
+                            <i class="fas fa-ellipsis-v pointer-events-none"></i>
+                        </button>
+                        <!-- Dropdown Panel for Subfolder -->
+                        <div id="menu-dropdown-folder-${subfolder.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-folder-btn" data-id="${subfolder.id}" data-name="${subfolder.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-folder-btn" data-id="${subfolder.id}" data-name="${subfolder.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-folder-btn" data-id="${subfolder.id}" data-name="${subfolder.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
+                        </div>
                     </div>
                 </div>
-                <!-- ===== FIM DA MODIFICAÇÃO ===== -->
-                
-                <!-- Middle: Question Count (escondido no modo mover) -->
-                <div class="flex-shrink-0 mx-4 ${isMoveMode ? 'hidden' : 'flex'}">
-                    <span class="text-sm text-gray-500 whitespace-nowrap">${state.userCadernos.filter(c => c.folderId === subfolder.id).length} caderno(s)</span>
-                </div>
+            </div>`;
 
-                <!-- Right: Menu (escondido no modo mover) -->
-                <div class="relative flex-shrink-0 ${isMoveMode ? 'hidden' : 'flex'}">
-                    <button class="folder-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-folder-id="${subfolder.id}">
-                        <i class="fas fa-ellipsis-v pointer-events-none"></i>
-                    </button>
-                    <!-- Dropdown Panel for Subfolder -->
-                    <div id="menu-dropdown-folder-${subfolder.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-folder-btn" data-id="${subfolder.id}" data-name="${subfolder.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-folder-btn" data-id="${subfolder.id}" data-name="${subfolder.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-folder-btn" data-id="${subfolder.id}" data-name="${subfolder.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
-                    </div>
-                </div>
-            </div>
-        </div>`;
+            // Renderiza os cadernos filhos desta subpasta (inicialmente ocultos)
+            const notebooksInside = state.userCadernos
+                .filter(c => c.folderId === subfolder.id)
+                .sort(naturalSort);
+            
+            notebooksInside.forEach(caderno => {
+                html += `<div class="hidden notebook-child-of-${subfolder.id}">`;
+                html += getCadernoRowHtml(caderno, true); // true = isSubItem
+                html += `</div>`;
+            });
+            // --- Fim da lógica de renderização da subpasta ---
 
-        // Renderiza os cadernos filhos desta subpasta (inicialmente ocultos)
-        const notebooksInside = state.userCadernos
-            .filter(c => c.folderId === subfolder.id)
-            .sort(naturalSort);
-        
-        notebooksInside.forEach(caderno => {
-            html += `<div class="hidden notebook-child-of-${subfolder.id}">`;
-            html += getCadernoRowHtml(caderno, true); // true = isSubItem
-            html += `</div>`;
-        });
+        } else if (item.type === 'caderno') {
+            // --- Início da lógica de renderização do caderno (copiada de antes) ---
+            const caderno = item;
+            html += getCadernoRowHtml(caderno, false); // false = not a subItem
+            // --- Fim da lógica de renderização do caderno ---
+        }
     });
-
-    // 4. Renderiza cadernos que estão diretamente nesta pasta (não em subpastas)
-    cadernosInThisFolder.forEach(caderno => {
-        html += getCadernoRowHtml(caderno, false); // false = not a subItem
-    });
+    // ===== FIM DA MODIFICAÇÃO =====
 
     html += '</div>'; // Fecha o wrapper
     DOM.savedCadernosListContainer.innerHTML = html;
