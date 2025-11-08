@@ -422,3 +422,17 @@ body {
 
 /* ===== FIM DA MODIFICAÇÃO ===== */
 
+/* ===== INÍCIO DA MODIFICAÇÃO: Estilos para expandir/recolher pastas ===== */
+.toggle-folder-contents {
+    transition: transform 0.2s ease-in-out;
+}
+
+.toggle-folder-contents.rotate-90 {
+    transform: rotate(90deg);
+}
+
+/* Classe para cadernos filhos ocultos */
+.notebook-child-of {
+    background-color: #f9fafb; /* bg-gray-50 para diferenciar levemente */
+}
+/* ===== FIM DA MODIFICAÇÃO ===== */
