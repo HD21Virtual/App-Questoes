@@ -1,7 +1,10 @@
 import DOM from './dom-elements.js';
 // --- CORREÇÃO: Importar setState e clearSessionStats ---
 import { state, setState, clearSessionStats } from './state.js';
-import { closeSaveModal, closeCadernoModal, closeNameModal, handleConfirmation, openSaveModal, openCadernoModal, openNameModal, openLoadModal, closeLoadModal, handleLoadModalEvents, updateSavedFiltersList, closeConfirmationModal, closeStatsModal, openAuthModal, closeAuthModal } from './ui/modal.js';
+// ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+// NOVO: Importar openSubfolderModal e closeSubfolderModal
+import { closeSaveModal, closeCadernoModal, closeNameModal, handleConfirmation, openSaveModal, openCadernoModal, openNameModal, openLoadModal, closeLoadModal, handleLoadModalEvents, updateSavedFiltersList, closeConfirmationModal, closeStatsModal, openAuthModal, closeAuthModal, openSubfolderModal, closeSubfolderModal } from './ui/modal.js';
+// ===== FIM DA MODIFICAÇÃO =====
 // CORREÇÃO: Salvar o progresso ao sair da página
 // --- MODIFICAÇÃO: Importar resetAllUserData e updateStatsAssuntoFilter ---
 // ===== INÍCIO DA MODIFICAÇÃO: Caminho corrigido de '../services/firestore.js' para './services/firestore.js' =====
@@ -438,13 +441,28 @@ export function setupAllEventListeners() {
         }
         else if (target.closest('.create-subfolder-btn')) {
             event.preventDefault();
-            // Abre o modal de criação de pasta.
-            // Nota: O app atualmente só cria pastas na raiz.
-            openNameModal('folder');
+            
+            // MODIFICADO: Abre o novo modal de subpasta em vez do modal genérico
+            openSubfolderModal(); 
             
             // Esconde o dropdown
             const dropdown = target.closest('.folder-info-menu-dropdown');
             if (dropdown) dropdown.classList.add('hidden');
+        }
+        
+        // NOVO: Listeners para o modal de subpasta
+        else if (target.closest('#cancel-subfolder-btn')) {
+            closeSubfolderModal();
+        }
+        else if (target.closest('#confirm-subfolder-btn')) {
+            const name = DOM.subfolderNameInput.value.trim();
+            // Lógica de criação da subpasta (desativada conforme solicitado)
+            console.log(`Lógica de criação de subpasta desativada. Nome digitado: ${name}`);
+            
+            // Ação temporária: Apenas fecha o modal
+            closeSubfolderModal();
+            // TODO: Adicionar a lógica de criação da subpasta aqui (provavelmente em firestore.js e chamando-a aqui)
+            // ex: await createSubfolder(name, state.currentFolderId);
         }
         // ===== FIM DA MODIFICAÇÃO =====
 
