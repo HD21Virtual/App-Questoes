@@ -38,7 +38,7 @@ async function renderCadernoContentView() {
     DOM.createFolderBtn.classList.add('hidden');
     DOM.addQuestionsToCadernoBtn.classList.remove('hidden');
     // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-    DOM.toggleMoveModeBtn.classList.add('hidden'); // Esconde o botão "Mover"
+    // DOM.toggleMoveModeBtn.classList.add('hidden'); // Esconde o botão "Mover" // REMOVIDO
     // ===== FIM DA MODIFICAÇÃO =====
 
     // Clones the question solver UI from the main "Questões" tab and injects it here.
@@ -97,7 +97,9 @@ function getCadernoRowHtml(caderno, isSubItem = false) {
             <div id="menu-dropdown-${caderno.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
-                <!-- "Mover" removido, pois o novo fluxo substitui isso -->
+                <!-- ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) ===== -->
+                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 toggle-move-mode-btn-from-dropdown" data-caderno-id="${caderno.id}"><i class="fas fa-share w-5 mr-2 text-gray-500"></i>Mover</a>
+                <!-- ===== FIM DA MODIFICAÇÃO ===== -->
                 <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
             </div>
         </div>
@@ -175,12 +177,11 @@ function renderFolderContentView() {
     // Esconde/Mostra botões com base no modo de mover
     DOM.backToFoldersBtn.classList.remove('hidden');
     DOM.addCadernoToFolderBtn.classList.toggle('hidden', isMoveMode);
-    DOM.createFolderBtn.classList.toggle('hidden', isMoveMode);
+    // DOM.createFolderBtn.classList.toggle('hidden', isMoveMode); // MODIFICADO ABAIXO
+    DOM.createFolderBtn.classList.add('hidden'); // Sempre escondido dentro da pasta
     DOM.addQuestionsToCadernoBtn.classList.add('hidden');
-    DOM.toggleMoveModeBtn.classList.toggle('hidden', isMoveMode); // Esconde o botão "Mover" se já estiver no modo
-
-    // Mostra/Esconde o botão "Mover" principal
-    DOM.toggleMoveModeBtn.classList.remove('hidden');
+    // DOM.toggleMoveModeBtn.classList.toggle('hidden', isMoveMode); // REMOVIDO
+    // DOM.toggleMoveModeBtn.classList.remove('hidden'); // REMOVIDO
     // ===== FIM DA MODIFICAÇÃO =====
 
     // 1. Get Subfolders
@@ -283,10 +284,8 @@ function renderRootCadernosView() {
     DOM.addQuestionsToCadernoBtn.classList.add('hidden');
     
     DOM.createFolderBtn.classList.toggle('hidden', isMoveMode);
-    DOM.toggleMoveModeBtn.classList.toggle('hidden', isMoveMode); // Esconde o botão "Mover" se já estiver no modo
-
-    // Mostra/Esconde o botão "Mover" principal
-    DOM.toggleMoveModeBtn.classList.remove('hidden');
+    // DOM.toggleMoveModeBtn.classList.toggle('hidden', isMoveMode); // REMOVIDO
+    // DOM.toggleMoveModeBtn.classList.remove('hidden'); // REMOVIDO
     // ===== FIM DA MODIFICAÇÃO =====
 
     // 1. Get Cadernos sem pasta
