@@ -531,15 +531,18 @@ export function setupAllEventListeners() {
         }
         // ===== FIM DA MODIFICAÇÃO =====
 
-        // ===== INÍCIO DA MODIFICAÇÃO: Listener para expandir/recolher pastas =====
+        // ===== INÍCIO DA MODIFICAÇÃO: Listener para expandir/recolher pastas (SOLICITAÇÃO DO USUÁRIO) =====
         else if (target.closest('.toggle-folder-contents')) {
-            const icon = target.closest('.toggle-folder-contents');
-            // A pasta (ou subpasta) clicada
-            const folderRow = icon.closest('[data-folder-id]');
-            if (folderRow) {
-                const folderId = folderRow.dataset.folderId;
-                icon.classList.toggle('rotate-90');
-                const isExpanded = icon.classList.contains('rotate-90');
+            const toggleSpan = target.closest('.toggle-folder-contents');
+            const folderId = toggleSpan.dataset.folderId; // Pega o ID do span
+            
+            if (folderId) {
+                // Verifica o estado atual baseado no texto
+                const isCurrentlyExpanded = toggleSpan.textContent === toggleSpan.dataset.textCollapse;
+                const isExpanded = !isCurrentlyExpanded; // O novo estado
+
+                // Atualiza o texto
+                toggleSpan.textContent = isExpanded ? toggleSpan.dataset.textCollapse : toggleSpan.dataset.textExpand;
                 
                 // Encontra todos os cadernos filhos e alterna a visibilidade
                 document.querySelectorAll(`.notebook-child-of-${folderId}`).forEach(row => {
