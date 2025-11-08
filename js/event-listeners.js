@@ -434,7 +434,17 @@ export function setupAllEventListeners() {
         // }
         // NOVO: Listener para o botão "Mover" no dropdown do caderno
         else if (target.closest('.toggle-move-mode-btn-from-dropdown')) {
-            toggleMoveMode();
+            // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+            const button = target.closest('.toggle-move-mode-btn-from-dropdown');
+            const cadernoId = button.dataset.cadernoId;
+            
+            // Define o item a ser pré-selecionado
+            setState('itemToPreselectOnMove', { id: cadernoId, type: 'caderno' });
+            
+            // Ativa o modo de mover (que lerá o estado acima)
+            toggleMoveMode(); 
+            // ===== FIM DA MODIFICAÇÃO =====
+            
             // Esconde o dropdown
             const dropdown = target.closest('.caderno-menu-dropdown');
             if (dropdown) dropdown.classList.add('hidden');
