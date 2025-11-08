@@ -44,6 +44,15 @@ export function initDOM() {
     DOM.createFolderBtn = document.getElementById('create-folder-btn');
     DOM.addQuestionsBanner = document.getElementById('add-questions-banner');
     DOM.addQuestionsBannerText = document.getElementById('add-questions-banner-text');
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // NOVO: Referências para o modo "Mover"
+    DOM.toggleMoveModeBtn = document.getElementById('toggle-move-mode-btn');
+    DOM.cadernosMoveFooter = document.getElementById('cadernos-move-footer');
+    DOM.moveFooterFolderSelect = document.getElementById('move-footer-folder-select');
+    DOM.moveFooterSubfolderSelect = document.getElementById('move-footer-subfolder-select');
+    DOM.confirmMoveSelectedBtn = document.getElementById('confirm-move-selected-btn');
+    DOM.cancelMoveSelectedBtn = document.getElementById('cancel-move-selected-btn');
+    // ===== FIM DA MODIFICAÇÃO =====
 
     // Materias View
     DOM.materiasViewTitle = document.getElementById('materias-view-title');
@@ -90,12 +99,12 @@ export function initDOM() {
     DOM.confirmSubfolderBtn = document.getElementById('confirm-subfolder-btn');
     DOM.cancelSubfolderBtn = document.getElementById('cancel-subfolder-btn');
 
-    // NOVO: Move Modal
-    DOM.moveModal = document.getElementById('move-modal');
-    DOM.moveFolderSelect = document.getElementById('move-folder-select');
-    DOM.moveSubfolderSelect = document.getElementById('move-subfolder-select');
-    DOM.confirmMoveBtn = document.getElementById('confirm-move-btn');
-    DOM.cancelMoveBtn = document.getElementById('cancel-move-btn');
+    // REMOVIDO: Referências do Modal "Mover" antigo
+    // DOM.moveModal = document.getElementById('move-modal'); // REMOVIDO
+    // DOM.moveFolderSelect = document.getElementById('move-folder-select'); // REMOVIDO
+    // DOM.moveSubfolderSelect = document.getElementById('move-subfolder-select'); // REMOVIDO
+    // DOM.confirmMoveBtn = document.getElementById('confirm-move-btn'); // REMOVIDO
+    // DOM.cancelMoveBtn = document.getElementById('cancel-move-btn'); // REMOVIDO
     // ===== FIM DA MODIFICAÇÃO =====
 
     // Confirmation Modal
