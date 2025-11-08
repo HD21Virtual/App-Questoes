@@ -429,8 +429,15 @@ export function setupAllEventListeners() {
         else if (target.closest('#close-stats-modal')) closeStatsModal();
 
         // ===== INÍCIO DA MODIFICAÇÃO: Listeners do Modo "Mover" =====
-        else if (target.closest('#toggle-move-mode-btn')) {
+        // else if (target.closest('#toggle-move-mode-btn')) { // REMOVIDO
+        //     toggleMoveMode();
+        // }
+        // NOVO: Listener para o botão "Mover" no dropdown do caderno
+        else if (target.closest('.toggle-move-mode-btn-from-dropdown')) {
             toggleMoveMode();
+            // Esconde o dropdown
+            const dropdown = target.closest('.caderno-menu-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
         }
         else if (target.closest('#cancel-move-selected-btn')) {
             cancelMoveMode();
