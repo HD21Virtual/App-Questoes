@@ -3,7 +3,14 @@ import DOM from './dom-elements.js';
 import { state, setState, clearSessionStats } from './state.js';
 // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
 // NOVO: Importar openSubfolderModal e closeSubfolderModal
-import { closeSaveModal, closeCadernoModal, closeNameModal, handleConfirmation, openSaveModal, openCadernoModal, openNameModal, openLoadModal, closeLoadModal, handleLoadModalEvents, updateSavedFiltersList, closeConfirmationModal, closeStatsModal, openAuthModal, closeAuthModal, openSubfolderModal, closeSubfolderModal } from './ui/modal.js';
+import { 
+    closeSaveModal, closeCadernoModal, closeNameModal, handleConfirmation, 
+    openSaveModal, openCadernoModal, openNameModal, openLoadModal, closeLoadModal, 
+    handleLoadModalEvents, updateSavedFiltersList, closeConfirmationModal, 
+    closeStatsModal, openAuthModal, closeAuthModal, openSubfolderModal, 
+    closeSubfolderModal, openMoveModal, closeMoveModal, handleConfirmMove, 
+    populateMoveSubfolders 
+} from './ui/modal.js';
 // ===== FIM DA MODIFICAÇÃO =====
 // CORREÇÃO: Salvar o progresso ao sair da página
 // --- MODIFICAÇÃO: Importar resetAllUserData e updateStatsAssuntoFilter ---
@@ -330,7 +337,15 @@ export function setupAllEventListeners() {
             DOM.statsPeriodoPanel.classList.add('hidden');
             if (DOM.statsPeriodoCustomRange) DOM.statsPeriodoCustomRange.classList.add('hidden');
         }
-        // --- FIM NOVO ---
+
+        // ===== INÍCIO DA MODIFICAÇÃO: Fecha o modal de mover =====
+        if (DOM.moveModal && !target.closest('#move-modal') && !target.closest('.move-caderno-btn')) {
+            if (!DOM.moveModal.classList.contains('hidden')) {
+                closeMoveModal();
+            }
+        }
+        // ===== FIM DA MODIFICAÇÃO =====
+        
         
         // --- Cadeia Principal de Ações (IF-ELSE IF) ---
         
@@ -408,6 +423,19 @@ export function setupAllEventListeners() {
         else if (target.closest('#confirm-delete-btn')) await handleConfirmation();
         
         else if (target.closest('#close-stats-modal')) closeStatsModal();
+
+        // ===== INÍCIO DA MODIFICAÇÃO: Listeners do Modal "Mover" =====
+        else if (target.closest('.move-caderno-btn')) {
+            openMoveModal(target.closest('.move-caderno-btn').dataset.id);
+        }
+        else if (target.closest('#cancel-move-btn')) {
+            closeMoveModal();
+        }
+        else if (target.closest('#confirm-move-btn')) {
+            await handleConfirmMove();
+        }
+        // ===== FIM DA MODIFICAÇÃO =====
+
 
         // --- Questions ---
         else if (target.closest('#prev-question-btn')) await navigateQuestion('prev');
@@ -499,6 +527,24 @@ export function setupAllEventListeners() {
                 }
             } else {
                 closeSubfolderModal();
+            }
+        }
+        // ===== FIM DA MODIFICAÇÃO =====
+
+        // ===== INÍCIO DA MODIFICAÇÃO: Listener para expandir/recolher pastas =====
+        else if (target.closest('.toggle-folder-contents')) {
+            const icon = target.closest('.toggle-folder-contents');
+            // A pasta (ou subpasta) clicada
+            const folderRow = icon.closest('[data-folder-id]');
+            if (folderRow) {
+                const folderId = folderRow.dataset.folderId;
+                icon.classList.toggle('rotate-90');
+                const isExpanded = icon.classList.contains('rotate-90');
+                
+                // Encontra todos os cadernos filhos e alterna a visibilidade
+                document.querySelectorAll(`.notebook-child-of-${folderId}`).forEach(row => {
+                    row.classList.toggle('hidden', !isExpanded);
+                });
             }
         }
         // ===== FIM DA MODIFICAÇÃO =====
@@ -893,6 +939,12 @@ export function setupAllEventListeners() {
         else if (target.matches('input[name="evolucao-filter"]')) {
             // Chama a função de filtragem principal, que vai ler o valor deste rádio
             handleStatsFilter();
+        }
+        // ===== FIM DA MODIFICAÇÃO =====
+
+        // ===== INÍCIO DA MODIFICAÇÃO: Listener para o select de Mover =====
+        if (target.id === 'move-folder-select') {
+            populateMoveSubfolders();
         }
         // ===== FIM DA MODIFICAÇÃO =====
     });
