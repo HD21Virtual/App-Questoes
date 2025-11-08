@@ -1,4 +1,4 @@
-import { Timestamp, updateDoc, doc, writeBatch } from "https://www.gstatic.com/firebase/js/11.6.1/firebase-firestore.js";
+import { Timestamp, updateDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { db } from '../firebase-config.js'; // Importar db
 import { state, setState } from '../state.js';
 import DOM from '../dom-elements.js';
@@ -817,3 +817,4 @@ export async function confirmMoveSelectedItems() {
     cancelMoveMode(); // Sai do modo de mover e re-renderiza
 }
 // ===== FIM DA MODIFICAÇÃO =====
+
