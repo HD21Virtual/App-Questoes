@@ -35,7 +35,11 @@ let state = {
     },
     savedFilters: [],
     selectedMateria: null,
-    movingCadernoId: null, // <-- ADICIONADO PARA O MODAL "MOVER"
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // movingCadernoId removido, isMoveModeActive adicionado
+    // movingCadernoId: null, // <-- REMOVIDO
+    isMoveModeActive: false, // <-- ADICIONADO
+    // ===== FIM DA MODIFICAÇÃO =====
     unsubscribes: []
 };
 
@@ -79,6 +83,9 @@ export function resetStateOnLogout() {
         userQuestionHistoryMap: new Map(), // <- ADICIONADO
         savedFilters: [],
         sessionStats: [],
+        // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+        isMoveModeActive: false, // Reseta o modo de mover ao deslogar
+        // ===== FIM DA MODIFICAÇÃO =====
     };
 }
 
