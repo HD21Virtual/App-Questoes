@@ -73,62 +73,76 @@ function renderFolderContentView() {
     DOM.createFolderBtn.classList.add('hidden');
     DOM.addQuestionsToCadernoBtn.classList.add('hidden');
 
-    // ===== INÍCIO DA MODIFICAÇÃO: Busca subpastas e cadernos =====
+    // ===== INÍCIO DA MODIFICAÇÃO: Combina, ordena e renderiza subpastas e cadernos =====
     
-    // 1. Get Subfolders
+    // 1. Get Subfolders e mapeia para um formato comum
     const subfolders = state.userFolders
         .filter(f => f.parentId === state.currentFolderId)
-        .sort((a, b) => naturalSort(a.name, b.name));
+        .map(f => ({
+            id: f.id,
+            name: f.name,
+            type: 'folder',
+            data: f
+        }));
 
-    // 2. Get Cadernos
+    // 2. Get Cadernos e mapeia para um formato comum
     const cadernosInFolder = state.userCadernos
         .filter(c => c.folderId === state.currentFolderId)
-        .sort((a, b) => naturalSort(a.name, b.name));
+        .map(c => ({
+            id: c.id,
+            name: c.name,
+            type: 'caderno',
+            data: c
+        }));
     
+    // 3. Combina e Ordena Alfanumericamente
+    const combinedItems = [...subfolders, ...cadernosInFolder];
+    combinedItems.sort((a, b) => naturalSort(a.name, b.name));
+
     let html = '';
 
-    // 3. Render Subfolders (com o estilo da imagem)
-    if (subfolders.length > 0) {
-        html += '<div class="bg-white rounded-lg shadow-sm mb-4">'; // Wrapper para subpastas
-        subfolders.forEach(folder => {
-            const folderCadernosCount = state.userCadernos.filter(c => c.folderId === folder.id).length;
-            // Estilo baseado na imagem e similar ao item de caderno
-            html += `
-            <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${folder.id}">
-                <!-- Left: Icon + Name (clickable to open) -->
-                <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;">
-                    <!-- Ícone de pasta (cinza, conforme imagem) -->
-                    <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
-                    <span class="font-medium text-gray-800 truncate" title="${folder.name}">${folder.name}</span>
-                </div>
-                
-                <!-- Middle: Question Count -->
-                <div class="flex-shrink-0 mx-4">
-                    <span class="text-sm text-gray-500 whitespace-nowrap">${folderCadernosCount} caderno(s)</span>
-                </div>
-
-                <!-- Right: Menu -->
-                <div class="relative flex-shrink-0">
-                    <button class="folder-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-folder-id="${folder.id}">
-                        <i class="fas fa-ellipsis-v pointer-events-none"></i>
-                    </button>
-                    <!-- Dropdown Panel for Subfolder -->
-                    <div id="menu-dropdown-folder-${folder.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
-                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
+    // 4. Renderiza os itens combinados
+    if (combinedItems.length > 0) {
+        // Adiciona um único wrapper para todos os itens (estilo do caderno)
+        html += '<div class="bg-white rounded-lg shadow-sm">';
+        
+        combinedItems.forEach(item => {
+            if (item.type === 'folder') {
+                // HTML para Subpasta (estilo do caderno)
+                const folder = item.data;
+                const folderCadernosCount = state.userCadernos.filter(c => c.folderId === folder.id).length;
+                html += `
+                <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${folder.id}">
+                    <!-- Left: Icon + Name (clickable to open) -->
+                    <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;">
+                        <!-- Ícone de pasta (cinza, conforme imagem) -->
+                        <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
+                        <span class="font-medium text-gray-800 truncate" title="${folder.name}">${folder.name}</span>
                     </div>
-                </div>
-            </div>`;
-        });
-        html += '</div>';
-    }
+                    
+                    <!-- Middle: Question Count -->
+                    <div class="flex-shrink-0 mx-4">
+                        <span class="text-sm text-gray-500 whitespace-nowrap">${folderCadernosCount} caderno(s)</span>
+                    </div>
 
-    // 4. Render Cadernos
-    if (cadernosInFolder.length > 0) {
-         html += '<div class="bg-white rounded-lg shadow-sm">'; // Wrapper para cadernos
-         cadernosInFolder.forEach((caderno) => {
-             html += `
+                    <!-- Right: Menu -->
+                    <div class="relative flex-shrink-0">
+                        <button class="folder-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-folder-id="${folder.id}">
+                            <i class="fas fa-ellipsis-v pointer-events-none"></i>
+                        </button>
+                        <!-- Dropdown Panel for Subfolder -->
+                        <div id="menu-dropdown-folder-${folder.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
+                        </div>
+                    </div>
+                </div>`;
+
+            } else if (item.type === 'caderno') {
+                // HTML para Caderno
+                const caderno = item.data;
+                html += `
                 <div class="caderno-item flex justify-between items-center p-3 hover:bg-gray-50" data-caderno-id="${caderno.id}">
                     <!-- Left: Icon + Name (clickable to open) -->
                     <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;"> <!-- min-width: 0 para truncamento -->
@@ -154,16 +168,15 @@ function renderFolderContentView() {
                         </div>
                     </div>
                 </div>`;
-         });
-         html += '</div>'; 
-         DOM.savedCadernosListContainer.innerHTML = html;
-    
-    } else if (subfolders.length === 0) {
-        // 5. Mensagem de "vazio" (apenas se não houver cadernos E nem subpastas)
-        DOM.savedCadernosListContainer.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-lg shadow-sm">Nenhum caderno ou subpasta aqui. Clique em "Adicionar Caderno" ou use o menu para criar uma subpasta.</p>';
-    } else {
-        // Havia subpastas, mas não cadernos
+            }
+        });
+        
+        html += '</div>'; // Fecha o wrapper
         DOM.savedCadernosListContainer.innerHTML = html;
+
+    } else {
+        // 5. Mensagem de "vazio"
+        DOM.savedCadernosListContainer.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-lg shadow-sm">Nenhum caderno ou subpasta aqui. Clique em "Adicionar Caderno" ou use o menu para criar uma subpasta.</p>';
     }
     // ===== FIM DA MODIFICAÇÃO =====
 }
