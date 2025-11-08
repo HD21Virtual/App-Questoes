@@ -73,18 +73,61 @@ function renderFolderContentView() {
     DOM.createFolderBtn.classList.add('hidden');
     DOM.addQuestionsToCadernoBtn.classList.add('hidden');
 
-    // --- MUDANÇA: Ordenação natural dos cadernos ---
+    // ===== INÍCIO DA MODIFICAÇÃO: Busca subpastas e cadernos =====
+    
+    // 1. Get Subfolders
+    const subfolders = state.userFolders
+        .filter(f => f.parentId === state.currentFolderId)
+        .sort((a, b) => naturalSort(a.name, b.name));
+
+    // 2. Get Cadernos
     const cadernosInFolder = state.userCadernos
         .filter(c => c.folderId === state.currentFolderId)
         .sort((a, b) => naturalSort(a.name, b.name));
-    // --- FIM DA MUDANÇA ---
+    
+    let html = '';
 
+    // 3. Render Subfolders (com o estilo da imagem)
+    if (subfolders.length > 0) {
+        html += '<div class="bg-white rounded-lg shadow-sm mb-4">'; // Wrapper para subpastas
+        subfolders.forEach(folder => {
+            const folderCadernosCount = state.userCadernos.filter(c => c.folderId === folder.id).length;
+            // Estilo baseado na imagem e similar ao item de caderno
+            html += `
+            <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${folder.id}">
+                <!-- Left: Icon + Name (clickable to open) -->
+                <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;">
+                    <!-- Ícone de pasta (cinza, conforme imagem) -->
+                    <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
+                    <span class="font-medium text-gray-800 truncate" title="${folder.name}">${folder.name}</span>
+                </div>
+                
+                <!-- Middle: Question Count -->
+                <div class="flex-shrink-0 mx-4">
+                    <span class="text-sm text-gray-500 whitespace-nowrap">${folderCadernosCount} caderno(s)</span>
+                </div>
+
+                <!-- Right: Menu -->
+                <div class="relative flex-shrink-0">
+                    <button class="folder-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-folder-id="${folder.id}">
+                        <i class="fas fa-ellipsis-v pointer-events-none"></i>
+                    </button>
+                    <!-- Dropdown Panel for Subfolder -->
+                    <div id="menu-dropdown-folder-${folder.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
+                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-folder-btn" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
+                    </div>
+                </div>
+            </div>`;
+        });
+        html += '</div>';
+    }
+
+    // 4. Render Cadernos
     if (cadernosInFolder.length > 0) {
-         // --- MODIFICAÇÃO: Wrapper para o layout de lista ---
-         let html = '<div class="bg-white rounded-lg shadow-sm">';
-         cadernosInFolder.forEach((caderno, index) => {
-             const isLast = index === cadernosInFolder.length - 1;
-             // --- MODIFICAÇÃO: HTML do item do caderno para layout de lista (removida a borda) ---
+         html += '<div class="bg-white rounded-lg shadow-sm">'; // Wrapper para cadernos
+         cadernosInFolder.forEach((caderno) => {
              html += `
                 <div class="caderno-item flex justify-between items-center p-3 hover:bg-gray-50" data-caderno-id="${caderno.id}">
                     <!-- Left: Icon + Name (clickable to open) -->
@@ -111,13 +154,18 @@ function renderFolderContentView() {
                         </div>
                     </div>
                 </div>`;
-            // --- FIM DA MODIFICAÇÃO ---
          });
-         html += '</div>'; // --- FIM do wrapper
+         html += '</div>'; 
          DOM.savedCadernosListContainer.innerHTML = html;
+    
+    } else if (subfolders.length === 0) {
+        // 5. Mensagem de "vazio" (apenas se não houver cadernos E nem subpastas)
+        DOM.savedCadernosListContainer.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-lg shadow-sm">Nenhum caderno ou subpasta aqui. Clique em "Adicionar Caderno" ou use o menu para criar uma subpasta.</p>';
     } else {
-        DOM.savedCadernosListContainer.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-lg shadow-sm">Nenhum caderno nesta pasta ainda. Clique em "Adicionar Caderno" para criar um.</p>';
+        // Havia subpastas, mas não cadernos
+        DOM.savedCadernosListContainer.innerHTML = html;
     }
+    // ===== FIM DA MODIFICAÇÃO =====
 }
 
 // Renders the root view of the "Cadernos" tab, showing all folders and unfiled notebooks.
@@ -134,9 +182,11 @@ function renderRootCadernosView() {
         .sort((a, b) => naturalSort(a.name, b.name));
     // --- FIM DA MUDANÇA ---
 
-    // --- MUDANÇA: Ordenação alfabética padrão para as pastas ---
-    const sortedFolders = state.userFolders.sort((a, b) => a.name.localeCompare(b.name));
-    // --- FIM DA MUDANÇA ---
+    // ===== INÍCIO DA MODIFICAÇÃO: Filtra para mostrar apenas pastas raiz =====
+    const sortedFolders = state.userFolders
+        .filter(f => !f.parentId) // Apenas pastas que NÃO têm parentId
+        .sort((a, b) => naturalSort(a.name, b.name)); // Modificado para ordenação natural
+    // ===== FIM DA MODIFICAÇÃO =====
 
     if (sortedFolders.length === 0 && unfiledCadernos.length === 0) {
         DOM.savedCadernosListContainer.innerHTML = '<p class="text-center text-gray-500 bg-white p-6 rounded-lg shadow-sm">Nenhum caderno ou pasta criada ainda.</p>';
@@ -145,13 +195,13 @@ function renderRootCadernosView() {
     
     let html = '';
 
-    // Render folders (mantendo ordenação alfabética)
+    // Render folders (mantendo ordenação natural)
     sortedFolders.forEach(folder => {
         const folderCadernosCount = state.userCadernos.filter(c => c.folderId === folder.id).length;
         html += `
             <div class="bg-white rounded-lg shadow-sm p-4 hover:bg-gray-50 transition folder-item mb-2" data-folder-id="${folder.id}">
                 <div class="flex justify-between items-center">
-                    <div class="flex items-center cursor-pointer flex-grow" data-action="open">
+                    <div class="flex items-center cursor-pointer flex-grow" data-action="open" style="min-width: 0;"> <!-- min-width: 0 para truncamento -->
                         <i class="fas fa-folder-open text-yellow-500 text-2xl mr-4"></i>
                         <div>
                             <span class="font-bold text-lg">${folder.name}</span>
@@ -161,7 +211,7 @@ function renderRootCadernosView() {
                     <div class="flex items-center space-x-1">
                          <button class="stats-folder-btn text-gray-400 hover:text-blue-600 p-2 rounded-full" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-chart-bar pointer-events-none"></i></button>
                          <button class="edit-folder-btn text-gray-400 hover:text-blue-600 p-2 rounded-full" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-pencil-alt pointer-events-none"></i></button>
-                         <button class="delete-folder-btn text-gray-400 hover:text-red-600 p-2 rounded-full" data-id="${folder.id}"><i class="fas fa-trash-alt pointer-events-none"></i></button>
+                         <button class="delete-folder-btn text-gray-400 hover:text-red-600 p-2 rounded-full" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-trash-alt pointer-events-none"></i></button>
                          <i class="fas fa-chevron-right text-gray-400 ml-2"></i>
                     </div>
                 </div>
@@ -287,7 +337,9 @@ export async function renderFoldersAndCadernos() {
 
 // Handles clicks on folder items to open them, edit, delete, or view stats.
 export function handleFolderItemClick(event) {
-    const folderItem = event.target.closest('.folder-item');
+    // ===== INÍCIO DA MODIFICAÇÃO: Permite cliques em .folder-item (subpastas) e .bg-white (pastas raiz) =====
+    const folderItem = event.target.closest('.folder-item, .bg-white[data-folder-id]');
+    // ===== FIM DA MODIFICAÇÃO =====
     if (!folderItem) return;
 
     const folderId = folderItem.dataset.folderId;
@@ -359,7 +411,14 @@ export function handleBackToFolders() {
             setState('currentFolderId', null);
         }
     } else if (state.currentFolderId) {
-        setState('currentFolderId', null);
+        // ===== INÍCIO DA MODIFICAÇÃO: Navega para a pasta pai, se existir =====
+        const currentFolder = state.userFolders.find(f => f.id === state.currentFolderId);
+        if (currentFolder && currentFolder.parentId) {
+            setState('currentFolderId', currentFolder.parentId);
+        } else {
+            setState('currentFolderId', null); // Vai para a raiz
+        }
+        // ===== FIM DA MODIFICAÇÃO =====
     }
     renderFoldersAndCadernos();
 }
