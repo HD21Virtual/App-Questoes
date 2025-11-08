@@ -216,8 +216,13 @@ function renderFolderContentView() {
                     <div class="checkbox-container ${isMoveMode ? 'flex' : 'hidden'} items-center pr-3">
                         <input type="checkbox" class="move-item-checkbox rounded" data-id="${subfolder.id}" data-type="folder">
                     </div>
-                    <!-- Ícone + Nome (NÃO é mais clicável para entrar se estiver em modo de mover) -->
-                    <div class="flex items-center flex-grow ${isMoveMode ? '' : 'cursor-pointer'}" ${isMoveMode ? '' : 'data-action="open"'} style="min-width: 0;">
+                    
+                    <!-- ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) ===== -->
+                    <!-- Removido 'data-action="open"' e a classe 'cursor-pointer' -->
+                    <!-- para que as subpastas não sejam clicáveis para "entrar". -->
+                    <!-- Apenas o botão (Expandir) funcionará. -->
+                    <div class="flex items-center flex-grow" style="min-width: 0;">
+                    <!-- ===== FIM DA MODIFICAÇÃO ===== -->
                         <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
                         <span class="font-medium text-gray-800 truncate" title="${subfolder.name}">${subfolder.name}</span>
                         <!-- ADICIONADO: Texto de expandir/recolher (escondido no modo mover) -->
@@ -602,7 +607,7 @@ export async function addFilteredQuestionsToCaderno() {
     const existingIds = new Set(caderno.questionIds || []);
     const newQuestionIds = state.filteredQuestions
         .map(q => q.id)
-        .filter(id => !existingIds.has(id));
+        ind(id => !existingIds.has(id));
 
     if (newQuestionIds.length > 0) {
         await addQuestionIdsToFirestore(cadernoId, newQuestionIds);
