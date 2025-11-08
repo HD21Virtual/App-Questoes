@@ -1,4 +1,5 @@
-import { Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { Timestamp, updateDoc, doc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { db } from '../firebase-config.js'; // Importar db
 import { state, setState } from '../state.js';
 import DOM from '../dom-elements.js';
 import { navigateToView } from '../ui/navigation.js';
@@ -36,6 +37,9 @@ async function renderCadernoContentView() {
     DOM.addCadernoToFolderBtn.classList.add('hidden');
     DOM.createFolderBtn.classList.add('hidden');
     DOM.addQuestionsToCadernoBtn.classList.remove('hidden');
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    DOM.toggleMoveModeBtn.classList.add('hidden'); // Esconde o botão "Mover"
+    // ===== FIM DA MODIFICAÇÃO =====
 
     // Clones the question solver UI from the main "Questões" tab and injects it here.
     const tempContainer = document.createElement('div');
@@ -60,21 +64,32 @@ async function renderCadernoContentView() {
 // Helper para renderizar uma linha de caderno (usado em ambas as views)
 function getCadernoRowHtml(caderno, isSubItem = false) {
     const indentation = isSubItem ? 'pl-10' : ''; // pl-10 = pl-4 (icon) + pl-6 (text)
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    const isMoveMode = state.isMoveModeActive;
+    // ===== FIM DA MODIFICAÇÃO =====
+
     return `
     <div class="caderno-item flex justify-between items-center p-3 hover:bg-gray-50 ${indentation}" data-caderno-id="${caderno.id}">
-        <!-- Left: Icon + Name (clickable to open) -->
-        <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;"> <!-- min-width: 0 para truncamento -->
-            <i class="far fa-file-alt text-blue-500 text-lg w-6 text-center mr-3 sm:mr-4"></i>
-            <span class="font-medium text-gray-800 truncate" title="${caderno.name}">${caderno.name}</span>
+        <!-- Left: Checkbox (Move Mode) + Icon + Name -->
+        <div class="flex items-center flex-grow" style="min-width: 0;">
+            <!-- Checkbox (visível apenas no modo Mover) -->
+            <div class="checkbox-container ${isMoveMode ? 'flex' : 'hidden'} items-center pr-3">
+                <input type="checkbox" class="move-item-checkbox rounded" data-id="${caderno.id}" data-type="caderno">
+            </div>
+            <!-- Ícone + Nome (clicável para abrir) -->
+            <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;">
+                <i class="far fa-file-alt text-blue-500 text-lg w-6 text-center mr-3 sm:mr-4"></i>
+                <span class="font-medium text-gray-800 truncate" title="${caderno.name}">${caderno.name}</span>
+            </div>
         </div>
         
-        <!-- Middle: Question Count -->
-        <div class="flex-shrink-0 mx-4">
+        <!-- Middle: Question Count (escondido no modo mover) -->
+        <div class="flex-shrink-0 mx-4 ${isMoveMode ? 'hidden' : 'flex'}">
             <span class="text-sm text-gray-500 whitespace-nowrap">${caderno.questionIds ? caderno.questionIds.length : 0} questões</span>
         </div>
 
-        <!-- Right: Menu -->
-        <div class="relative flex-shrink-0">
+        <!-- Right: Menu (escondido no modo mover) -->
+        <div class="relative flex-shrink-0 ${isMoveMode ? 'hidden' : 'flex'}">
             <button class="caderno-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-caderno-id="${caderno.id}">
                 <i class="fas fa-ellipsis-v pointer-events-none"></i>
             </button>
@@ -82,7 +97,7 @@ function getCadernoRowHtml(caderno, isSubItem = false) {
             <div id="menu-dropdown-${caderno.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
                 <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
-                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 move-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-share w-5 mr-2 text-gray-500"></i>Mover</a>
+                <!-- "Mover" removido, pois o novo fluxo substitui isso -->
                 <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
             </div>
         </div>
@@ -94,6 +109,10 @@ function getFolderRowHtml(folder, isSubfolder = false) {
     const folderCadernosCount = state.userCadernos.filter(c => c.folderId === folder.id).length;
     const folderSubfoldersCount = state.userFolders.filter(f => f.parentId === folder.id).length;
     const indentation = isSubfolder ? 'pl-4' : ''; // Subpastas têm um leve recuo
+
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    const isMoveMode = state.isMoveModeActive;
+    // ===== FIM DA MODIFICAÇÃO =====
 
     let countText = '';
     if (folderSubfoldersCount > 0 && folderCadernosCount > 0) {
@@ -109,19 +128,26 @@ function getFolderRowHtml(folder, isSubfolder = false) {
 
     return `
     <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${folder.id}">
-        <!-- Left: Icon + Name (clickable to open) -->
-        <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;">
-            <i class="fas ${iconClass} ${iconSize} w-6 text-center mr-3 sm:mr-4"></i>
-            <span class="font-medium text-gray-800 truncate" title="${folder.name}">${folder.name}</span>
+        <!-- Left: Checkbox (Move Mode) + Icon + Name -->
+        <div class="flex items-center flex-grow" style="min-width: 0;">
+            <!-- Checkbox (visível apenas no modo Mover) -->
+            <div class="checkbox-container ${isMoveMode ? 'flex' : 'hidden'} items-center pr-3">
+                <input type="checkbox" class="move-item-checkbox rounded" data-id="${folder.id}" data-type="folder">
+            </div>
+            <!-- Ícone + Nome (clicável para abrir) -->
+            <div class="flex items-center flex-grow cursor-pointer" data-action="open" style="min-width: 0;">
+                <i class="fas ${iconClass} ${iconSize} w-6 text-center mr-3 sm:mr-4"></i>
+                <span class="font-medium text-gray-800 truncate" title="${folder.name}">${folder.name}</span>
+            </div>
         </div>
         
-        <!-- Middle: Content Count -->
-        <div class="flex-shrink-0 mx-4">
+        <!-- Middle: Content Count (escondido no modo mover) -->
+        <div class="flex-shrink-0 mx-4 ${isMoveMode ? 'hidden' : 'flex'}">
             <span class="text-sm text-gray-500 whitespace-nowrap">${countText}</span>
         </div>
 
-        <!-- Right: Menu -->
-        <div class="relative flex-shrink-0">
+        <!-- Right: Menu (escondido no modo mover) -->
+        <div class="relative flex-shrink-0 ${isMoveMode ? 'hidden' : 'flex'}">
             <button class="folder-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-folder-id="${folder.id}">
                 <i class="fas fa-ellipsis-v pointer-events-none"></i>
             </button>
@@ -143,11 +169,19 @@ function renderFolderContentView() {
         renderFoldersAndCadernos(); 
         return; 
     }
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    const isMoveMode = state.isMoveModeActive;
 
+    // Esconde/Mostra botões com base no modo de mover
     DOM.backToFoldersBtn.classList.remove('hidden');
-    DOM.addCadernoToFolderBtn.classList.remove('hidden');
-    DOM.createFolderBtn.classList.add('hidden');
+    DOM.addCadernoToFolderBtn.classList.toggle('hidden', isMoveMode);
+    DOM.createFolderBtn.classList.toggle('hidden', isMoveMode);
     DOM.addQuestionsToCadernoBtn.classList.add('hidden');
+    DOM.toggleMoveModeBtn.classList.toggle('hidden', isMoveMode); // Esconde o botão "Mover" se já estiver no modo
+
+    // Mostra/Esconde o botão "Mover" principal
+    DOM.toggleMoveModeBtn.classList.remove('hidden');
+    // ===== FIM DA MODIFICAÇÃO =====
 
     // 1. Get Subfolders
     const subfolders = state.userFolders
@@ -175,28 +209,34 @@ function renderFolderContentView() {
         html += `
         <div class="folder-item-container" data-folder-id="${subfolder.id}">
             <div class="folder-item flex justify-between items-center p-3 hover:bg-gray-50" data-folder-id="${subfolder.id}">
-                <!-- Left: Icon + Name (NÃO é mais clicável para entrar) -->
-                <div class="flex items-center flex-grow" style="min-width: 0;"> <!-- REMOVIDO: data-action="open" e cursor-pointer -->
-                    <!-- Ícone de expandir (chevron) REMOVIDO -->
-                    <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
-                    <span class="font-medium text-gray-800 truncate" title="${subfolder.name}">${subfolder.name}</span>
-                    <!-- ADICIONADO: Texto de expandir/recolher -->
-                    <span class="toggle-folder-contents text-blue-600 hover:underline text-sm ml-2 cursor-pointer whitespace-nowrap" 
-                          data-folder-id="${subfolder.id}"
-                          data-text-expand="(Expandir)"
-                          data-text-collapse="(Recolher)">
-                        (Expandir)
-                    </span>
+                <!-- Left: Checkbox (Move Mode) + Icon + Name -->
+                <div class="flex items-center flex-grow" style="min-width: 0;">
+                    <!-- Checkbox (visível apenas no modo Mover) -->
+                    <div class="checkbox-container ${isMoveMode ? 'flex' : 'hidden'} items-center pr-3">
+                        <input type="checkbox" class="move-item-checkbox rounded" data-id="${subfolder.id}" data-type="folder">
+                    </div>
+                    <!-- Ícone + Nome (NÃO é mais clicável para entrar se estiver em modo de mover) -->
+                    <div class="flex items-center flex-grow ${isMoveMode ? '' : 'cursor-pointer'}" ${isMoveMode ? '' : 'data-action="open"'} style="min-width: 0;">
+                        <i class="fas fa-folder text-gray-600 text-lg w-6 text-center mr-3 sm:mr-4"></i>
+                        <span class="font-medium text-gray-800 truncate" title="${subfolder.name}">${subfolder.name}</span>
+                        <!-- ADICIONADO: Texto de expandir/recolher (escondido no modo mover) -->
+                        <span class="toggle-folder-contents text-blue-600 hover:underline text-sm ml-2 cursor-pointer whitespace-nowrap ${isMoveMode ? 'hidden' : ''}" 
+                              data-folder-id="${subfolder.id}"
+                              data-text-expand="(Expandir)"
+                              data-text-collapse="(Recolher)">
+                            (Expandir)
+                        </span>
+                    </div>
                 </div>
                 <!-- ===== FIM DA MODIFICAÇÃO ===== -->
                 
-                <!-- Middle: Question Count -->
-                <div class="flex-shrink-0 mx-4">
+                <!-- Middle: Question Count (escondido no modo mover) -->
+                <div class="flex-shrink-0 mx-4 ${isMoveMode ? 'hidden' : 'flex'}">
                     <span class="text-sm text-gray-500 whitespace-nowrap">${state.userCadernos.filter(c => c.folderId === subfolder.id).length} caderno(s)</span>
                 </div>
 
-                <!-- Right: Menu -->
-                <div class="relative flex-shrink-0">
+                <!-- Right: Menu (escondido no modo mover) -->
+                <div class="relative flex-shrink-0 ${isMoveMode ? 'hidden' : 'flex'}">
                     <button class="folder-menu-btn p-2 rounded-full text-gray-500 hover:bg-gray-200" data-folder-id="${subfolder.id}">
                         <i class="fas fa-ellipsis-v pointer-events-none"></i>
                     </button>
@@ -233,11 +273,21 @@ function renderFolderContentView() {
 
 // Renders the root view of the "Cadernos" tab, showing all folders and unfiled notebooks.
 function renderRootCadernosView() {
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    const isMoveMode = state.isMoveModeActive;
+    
+    // Esconde/Mostra botões com base no modo de mover
     DOM.cadernosViewTitle.textContent = 'Meus Cadernos';
     DOM.backToFoldersBtn.classList.add('hidden');
     DOM.addCadernoToFolderBtn.classList.add('hidden');
-    DOM.createFolderBtn.classList.remove('hidden');
     DOM.addQuestionsToCadernoBtn.classList.add('hidden');
+    
+    DOM.createFolderBtn.classList.toggle('hidden', isMoveMode);
+    DOM.toggleMoveModeBtn.classList.toggle('hidden', isMoveMode); // Esconde o botão "Mover" se já estiver no modo
+
+    // Mostra/Esconde o botão "Mover" principal
+    DOM.toggleMoveModeBtn.classList.remove('hidden');
+    // ===== FIM DA MODIFICAÇÃO =====
 
     // 1. Get Cadernos sem pasta
     const unfiledCadernos = state.userCadernos
@@ -262,16 +312,21 @@ function renderRootCadernosView() {
         html += `
         <div class="bg-white rounded-lg shadow-sm mb-2 folder-item-container" data-folder-id="${folder.id}">
             <div class="folder-item flex justify-between items-center p-4 hover:bg-gray-50 transition" data-folder-id="${folder.id}">
-                <div class="flex items-center cursor-pointer flex-grow" data-action="open" style="min-width: 0;">
-                    <!-- Ícone de expandir removido e substituído por placeholder -->
-                    <span class="w-4 mr-2"></span> <!-- Placeholder for alignment -->
+                <!-- Checkbox (visível apenas no modo Mover) -->
+                <div class="checkbox-container ${isMoveMode ? 'flex' : 'hidden'} items-center pr-3">
+                    <input type="checkbox" class="move-item-checkbox rounded" data-id="${folder.id}" data-type="folder">
+                </div>
+                <!-- Ícone + Nome (clicável se não estiver no modo mover) -->
+                <div class="flex items-center ${isMoveMode ? '' : 'cursor-pointer'} flex-grow" ${isMoveMode ? '' : 'data-action="open"'} style="min-width: 0;">
+                    <span class="w-4 mr-2 ${isMoveMode ? 'hidden' : ''}"></span> <!-- Placeholder for alignment -->
                     <i class="fas fa-folder-open text-yellow-500 text-2xl mr-4"></i>
                     <div>
                         <span class="font-bold text-lg">${folder.name}</span>
-                        <p class="text-sm text-gray-500">${state.userCadernos.filter(c => c.folderId === folder.id).length} caderno(s)</p>
+                        <p class="text-sm text-gray-500 ${isMoveMode ? 'hidden' : ''}">${state.userCadernos.filter(c => c.folderId === folder.id).length} caderno(s)</p>
                     </div>
                 </div>
-                <div class="flex items-center space-x-1">
+                <!-- Menus (escondidos no modo mover) -->
+                <div class="flex items-center space-x-1 ${isMoveMode ? 'hidden' : 'flex'}">
                      <button class="stats-folder-btn text-gray-400 hover:text-blue-600 p-2 rounded-full" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-chart-bar pointer-events-none"></i></button>
                      <button class="edit-folder-btn text-gray-400 hover:text-blue-600 p-2 rounded-full" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-pencil-alt pointer-events-none"></i></button>
                      <button class="delete-folder-btn text-gray-400 hover:text-red-600 p-2 rounded-full" data-id="${folder.id}" data-name="${folder.name}"><i class="fas fa-trash-alt pointer-events-none"></i></button>
@@ -321,8 +376,9 @@ export async function renderFoldersAndCadernos() {
             const count = state.userCadernos.filter(c => c.folderId === folder.id).length;
             // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
             // Adicionado ID ao botão de menu, classe 'relative' ao container e o HTML do dropdown
+            // Adicionada lógica para esconder no modo "Mover"
             const cardHtml = `
-            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border-b border-gray-200">
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-4 border-b border-gray-200 ${state.isMoveModeActive ? 'hidden' : ''}">
                 <div class="flex justify-between items-center">
                     <!-- Lado Esquerdo: Ícone, Nome, Opções -->
                     <div class="flex items-center">
@@ -369,10 +425,27 @@ export async function renderFoldersAndCadernos() {
     } else {
         renderRootCadernosView();
     }
+
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // Mostra/Esconde o rodapé de "Mover"
+    if (state.isMoveModeActive) {
+        DOM.cadernosMoveFooter.classList.remove('hidden');
+        populateMoveFooterDropdowns(); // Popula os dropdowns
+    } else {
+        DOM.cadernosMoveFooter.classList.add('hidden');
+    }
+    // ===== FIM DA MODIFICAÇÃO =====
 }
 
 // Handles clicks on folder items to open them, edit, delete, or view stats.
 export function handleFolderItemClick(event) {
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // Se estiver no modo de mover, ignora cliques de "abrir"
+    if (state.isMoveModeActive && !event.target.closest('.move-item-checkbox')) {
+        return; 
+    }
+    // ===== FIM DA MODIFICAÇÃO =====
+
     // ===== INÍCIO DA MODIFICAÇÃO: Permite cliques em .folder-item (subpastas) e .bg-white (pastas raiz) =====
     const folderItem = event.target.closest('.folder-item, .bg-white[data-folder-id]');
     // ===== FIM DA MODIFICAÇÃO =====
@@ -409,6 +482,13 @@ export function handleFolderItemClick(event) {
 
 // Handles clicks on notebook items to open them, edit, delete, or view stats.
 export function handleCadernoItemClick(event) {
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // Se estiver no modo de mover, ignora cliques de "abrir"
+    if (state.isMoveModeActive && !event.target.closest('.move-item-checkbox')) {
+        return;
+    }
+    // ===== FIM DA MODIFICAÇÃO =====
+
     const cadernoItem = event.target.closest('.caderno-item');
     if (!cadernoItem) return;
 
@@ -463,7 +543,14 @@ export function handleBackToFolders() {
         }
         // ===== FIM DA MODIFICAÇÃO =====
     }
-    renderFoldersAndCadernos();
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // Garante que o modo "Mover" seja desativado ao navegar para trás
+    if (state.isMoveModeActive) {
+        cancelMoveMode(); // Cancela o modo e re-renderiza
+    } else {
+        renderFoldersAndCadernos(); // Re-renderiza normalmente
+    }
+    // ===== FIM DA MODIFICAÇÃO =====
 }
 
 // Initiates the mode to add questions to the currently opened notebook.
@@ -535,3 +622,139 @@ export async function removeQuestionFromCaderno(questionId) {
     if (!state.currentCadernoId || !state.currentUser) return;
     await removeQuestionIdFromFirestore(state.currentCadernoId, questionId);
 }
+
+
+// ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+// NOVAS FUNÇÕES PARA O MODO "MOVER"
+
+/**
+ * Entra ou sai do modo de mover itens.
+ */
+export function toggleMoveMode() {
+    setState('isMoveModeActive', !state.isMoveModeActive);
+    renderFoldersAndCadernos();
+}
+
+/**
+ * Cancela o modo "Mover" e re-renderiza a lista.
+ */
+export function cancelMoveMode() {
+    setState('isMoveModeActive', false);
+    renderFoldersAndCadernos(); // Re-renderiza para esconder checkboxes e o rodapé
+}
+
+/**
+ * Popula os dropdowns de pasta e subpasta no rodapé "Mover".
+ */
+export function populateMoveFooterDropdowns() {
+    // 1. Popula o select de Pastas Raiz
+    if (DOM.moveFooterFolderSelect) {
+        DOM.moveFooterFolderSelect.innerHTML = '<option value="">-- Raiz --</option>'; // Opção para mover para a raiz
+        
+        // Filtra apenas pastas raiz (sem parentId) e ordena
+        const rootFolders = state.userFolders
+            .filter(f => !f.parentId)
+            .sort((a, b) => naturalSort(a.name, b.name));
+
+        rootFolders.forEach(folder => {
+            const option = document.createElement('option');
+            option.value = folder.id;
+            option.textContent = folder.name;
+            DOM.moveFooterFolderSelect.appendChild(option);
+        });
+    }
+
+    // 2. Reseta o select de Subpastas
+    if (DOM.moveFooterSubfolderSelect) {
+        DOM.moveFooterSubfolderSelect.innerHTML = '<option value="">--</option>';
+        DOM.moveFooterSubfolderSelect.disabled = true; // Desabilita até uma pasta raiz ser selecionada
+    }
+}
+
+/**
+ * Popula o dropdown de subpastas com base na pasta raiz selecionada no rodapé.
+ */
+export function handleMoveFooterFolderSelect() {
+    const selectedFolderId = DOM.moveFooterFolderSelect.value;
+    
+    if (DOM.moveFooterSubfolderSelect) {
+        DOM.moveFooterSubfolderSelect.innerHTML = '<option value="">--</option>'; // "--" significa mover PARA a pasta raiz selecionada
+
+        if (selectedFolderId) {
+            // Se uma pasta raiz foi selecionada, busca as subpastas dela
+            const subfolders = state.userFolders
+                .filter(f => f.parentId === selectedFolderId)
+                .sort((a, b) => naturalSort(a.name, b.name));
+            
+            subfolders.forEach(subfolder => {
+                const option = document.createElement('option');
+                option.value = subfolder.id;
+                option.textContent = subfolder.name;
+                DOM.moveFooterSubfolderSelect.appendChild(option);
+            });
+            
+            DOM.moveFooterSubfolderSelect.disabled = false; // Habilita o select
+        } else {
+            // Se "Raiz" foi selecionada, o select de subpastas fica desabilitado
+            DOM.moveFooterSubfolderSelect.disabled = true;
+        }
+    }
+}
+
+/**
+ * Executa a lógica de mover os itens selecionados (cadernos/pastas) no Firestore.
+ */
+export async function confirmMoveSelectedItems() {
+    if (!state.currentUser) return;
+
+    const subfolderId = DOM.moveFooterSubfolderSelect.value;
+    const folderId = DOM.moveFooterFolderSelect.value;
+
+    // A pasta de destino é a subpasta (se selecionada) ou a pasta raiz (se selecionada).
+    // Se "Raiz" (folderId = "") for selecionada, targetFolderId será null.
+    const targetFolderId = subfolderId || folderId || null;
+
+    // Coleta os itens selecionados
+    const selectedItems = DOM.savedCadernosListContainer.querySelectorAll('.move-item-checkbox:checked');
+    
+    if (selectedItems.length === 0) {
+        console.warn("Nenhum item selecionado para mover.");
+        cancelMoveMode();
+        return;
+    }
+
+    const batch = writeBatch(db);
+
+    selectedItems.forEach(item => {
+        const { id, type } = item.dataset;
+        if (!id || !type) return;
+
+        // Não permite mover uma pasta para dentro dela mesma (caso simples)
+        if (type === 'folder' && id === targetFolderId) {
+            console.warn(`Não é possível mover a pasta ${id} para dentro dela mesma.`);
+            return;
+        }
+        // TODO: Adicionar verificação para não mover pasta-pai para pasta-filha (mais complexo)
+
+        const collectionPath = type === 'folder' ? 'folders' : 'cadernos';
+        const docRef = doc(db, 'users', state.currentUser.uid, collectionPath, id);
+        
+        // Pastas (folders) usam 'parentId', Cadernos (cadernos) usam 'folderId'
+        const fieldToUpdate = type === 'folder' ? 'parentId' : 'folderId';
+        
+        batch.update(docRef, {
+            [fieldToUpdate]: targetFolderId
+        });
+    });
+
+    try {
+        await batch.commit();
+        console.log(`${selectedItems.length} itens movidos para a pasta ${targetFolderId}`);
+    } catch (error) {
+        console.error("Erro ao mover itens:", error);
+        // TODO: Mostrar um modal de erro para o usuário
+    }
+
+    cancelMoveMode(); // Sai do modo de mover e re-renderiza
+}
+// ===== FIM DA MODIFICAÇÃO =====
