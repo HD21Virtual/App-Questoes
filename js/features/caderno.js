@@ -164,6 +164,9 @@ function renderFolderContentView() {
                         <div id="menu-dropdown-${caderno.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
+                            <!-- INÍCIO DA MODIFICAÇÃO: Adicionada opção "Mover" -->
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 move-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-share w-5 mr-2 text-gray-500"></i>Mover</a>
+                            <!-- FIM DA MODIFICAÇÃO -->
                             <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
                         </div>
                     </div>
@@ -265,6 +268,9 @@ function renderRootCadernosView() {
                         <div id="menu-dropdown-${caderno.id}" class="caderno-menu-dropdown hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-20 border">
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 stats-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-chart-bar w-5 mr-2 text-gray-500"></i>Desempenho</a>
                             <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 edit-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-pencil-alt w-5 mr-2 text-gray-500"></i>Renomear</a>
+                            <!-- INÍCIO DA MODIFICAÇÃO: Adicionada opção "Mover" -->
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 move-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-share w-5 mr-2 text-gray-500"></i>Mover</a>
+                            <!-- FIM DA MODIFICAÇÃO -->
                             <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 delete-caderno-btn" data-id="${caderno.id}" data-name="${caderno.name}"><i class="fas fa-trash-alt w-5 mr-2"></i>Excluir</a>
                         </div>
                     </div>
