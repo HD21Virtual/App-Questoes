@@ -723,12 +723,42 @@ export function populateMoveFooterDropdowns() {
             option.textContent = folder.name;
             DOM.moveFooterFolderSelect.appendChild(option);
         });
-    }
 
-    // 2. Reseta o select de Subpastas
-    if (DOM.moveFooterSubfolderSelect) {
-        DOM.moveFooterSubfolderSelect.innerHTML = '<option value="">--</option>';
-        DOM.moveFooterSubfolderSelect.disabled = true; // Desabilita até uma pasta raiz ser selecionada
+        // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+        // Pré-seleciona a pasta atual (ou a pasta pai, se estiver em uma subpasta)
+        if (state.currentFolderId) {
+            const currentFolder = state.userFolders.find(f => f.id === state.currentFolderId);
+            
+            if (currentFolder) {
+                if (currentFolder.parentId) {
+                    // Está em uma subpasta: seleciona a pasta-pai
+                    DOM.moveFooterFolderSelect.value = currentFolder.parentId;
+                    // Popula o dropdown de subpastas
+                    handleMoveFooterFolderSelect(); 
+                    // Seleciona a subpasta atual
+                    DOM.moveFooterSubfolderSelect.value = state.currentFolderId;
+                } else {
+                    // Está em uma pasta-raiz: seleciona ela mesma
+                    DOM.moveFooterFolderSelect.value = state.currentFolderId;
+                    // Popula o dropdown de subpastas (que ficará com "--" selecionado)
+                    handleMoveFooterFolderSelect();
+                }
+            }
+        } else {
+            // Se não estiver em nenhuma pasta (na raiz), reseta o select de subpastas
+            if (DOM.moveFooterSubfolderSelect) {
+                DOM.moveFooterSubfolderSelect.innerHTML = '<option value="">--</option>';
+                DOM.moveFooterSubfolderSelect.disabled = true;
+            }
+        }
+        // ===== FIM DA MODIFICAÇÃO =====
+
+    } else {
+        // Se o select de pasta não existe, garante que o de subpasta também seja resetado
+        if (DOM.moveFooterSubfolderSelect) {
+            DOM.moveFooterSubfolderSelect.innerHTML = '<option value="">--</option>';
+            DOM.moveFooterSubfolderSelect.disabled = true;
+        }
     }
 }
 
@@ -739,7 +769,11 @@ export function handleMoveFooterFolderSelect() {
     const selectedFolderId = DOM.moveFooterFolderSelect.value;
     
     if (DOM.moveFooterSubfolderSelect) {
+        // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+        // O valor padrão deve ser "" (vazio), que corresponde à opção "--"
+        // Isso significa que o destino é a própria pasta-raiz selecionada, não uma subpasta.
         DOM.moveFooterSubfolderSelect.innerHTML = '<option value="">--</option>'; // "--" significa mover PARA a pasta raiz selecionada
+        // ===== FIM DA MODIFICAÇÃO =====
 
         if (selectedFolderId) {
             // Se uma pasta raiz foi selecionada, busca as subpastas dela
