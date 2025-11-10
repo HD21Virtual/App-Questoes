@@ -151,54 +151,75 @@ body {
     }
 }
 
-/* New Professional Header Styles */
-#main-nav .nav-link, #mobile-menu .nav-link {
-    transition: color 0.2s ease-in-out;
+/* MODIFICADO: Estilos de Header/Nav antigos removidos */
+/* #main-nav .nav-link, #mobile-menu .nav-link { ... } */
+/* #main-nav .nav-link::after { ... } */
+/* etc... */
+
+
+/* === NOVOS ESTILOS PARA SIDEBAR === */
+#main-nav .nav-link {
     position: relative;
-    padding-bottom: 0.75rem; /* 12px */
-    padding-top: 0.75rem;   /* 12px */
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
 }
 
-/* Underline indicator for active and hovered links on DESKTOP */
-#main-nav .nav-link::after {
+/* Indicador ativo para Sidebar (borda esquerda) */
+#main-nav .nav-link.active-nav {
+    background-color: #374151; /* gray-700 */
+    color: white;
+}
+
+#main-nav .nav-link.active-nav::before {
     content: '';
     position: absolute;
+    left: 0;
+    top: 0;
     bottom: 0;
-    left: 0.75rem;  /* px-3 */
-    right: 0.75rem; /* px-3 */
-    height: 3px;
+    width: 4px;
     background-color: #3b82f6; /* blue-500 */
-    border-radius: 2px;
-    transform: scaleX(0);
-    transform-origin: center;
-    transition: transform 0.2s ease-in-out;
+    border-radius: 0 4px 4px 0;
 }
 
-#main-nav .nav-link:hover::after,
-#main-nav .nav-link.active-nav::after {
-    transform: scaleX(1);
+/* Classes para colapsar (controladas por JS) */
+body.sidebar-collapsed #sidebar-nav {
+    transform: translateX(-100%);
 }
 
-/* Active link text color on DESKTOP */
-#main-nav .nav-link.active-nav {
-    color: white;
+body.sidebar-collapsed #main-content-wrapper {
+    margin-left: 0;
 }
 
-/* Reset mobile menu link padding */
-#mobile-menu .nav-link {
-    padding: 0.5rem 0.75rem; /* py-2 px-3 */
+/* Ajustes para mobile: a sidebar colapsa e o conteúdo toma a tela toda */
+@media (max-width: 767px) { /* Alterado para 767px (abaixo de 'md') */
+    #sidebar-nav {
+        transform: translateX(-100%);
+    }
+    #main-content-wrapper {
+        margin-left: 0;
+    }
+    
+    /* Quando a sidebar é aberta no mobile, ela fica *sobre* o conteúdo */
+    body.sidebar-open-mobile #sidebar-nav {
+        transform: translateX(0);
+        z-index: 50; /* Sobrepõe tudo */
+    }
+    
+    /* Opcional: Adicionar um overlay escuro sobre o conteúdo */
+    body.sidebar-open-mobile #main-content-wrapper::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 45; /* Abaixo da sidebar */
+        width: 100vw;
+        height: 100vh;
+    }
 }
+/* === FIM DOS ESTILOS DA SIDEBAR === */
 
-/* Remove underline effect for mobile */
-#mobile-menu .nav-link::after {
-    display: none;
-}
-
-/* Mobile menu active state - use background color instead */
-#mobile-menu .nav-link.active-nav {
-    background-color: #1f2937; /* gray-800 */
-    color: white;
-}
 
 /* === NOVOS ESTILOS PARA BOTÕES SRS === */
 .srs-feedback-btn {
@@ -414,4 +435,5 @@ body {
 #cadernos-view .folder-item .font-bold.text-lg,
 #materias-view .materia-item .font-bold.text-lg {
     font-family: "Source Sans Pro", "Trebuchet MS", Tahoma, sans-serif;
-    font-weight: 7
+    font-weight: 700; /* Corrigido: font-weight deve ser numérico ou 'bold' */
+}
