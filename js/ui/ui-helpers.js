@@ -1,5 +1,8 @@
 import DOM from '../dom-elements.js';
 import { state } from '../state.js';
+// NOVO: Imports para a função updateUserUI
+import { handleAuth } from '../services/auth.js';
+import { openAuthModal } from './modal.js';
 
 /**
  * @file js/ui/ui-helpers.js
@@ -150,24 +153,51 @@ export function updateSelectedFiltersDisplay() {
 }
 
 export function updateUserUI(user) {
-    const mobileContainer = DOM.userAccountContainerMobile;
+    // const mobileContainer = DOM.userAccountContainerMobile; // REMOVIDO
+    const sidebarContainer = DOM.userAccountSidebarContainer; // NOVO
     const desktopContainer = DOM.userAccountContainer;
 
-    if (!mobileContainer || !desktopContainer) return;
+    if (!sidebarContainer || !desktopContainer) return;
 
     desktopContainer.innerHTML = '';
-    mobileContainer.innerHTML = '';
+    sidebarContainer.innerHTML = ''; // Limpa o novo container da sidebar
 
     if (user) {
-        const loggedInHTML = `<div class="flex items-center"><span class="text-gray-300 text-sm mr-4">${user.email}</span><button id="logout-btn" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-lg text-sm font-medium">Sair</button></div>`;
-        const loggedInHTMLMobile = `<div class="flex items-center justify-between"><span class="text-gray-300 text-sm">${user.email}</span><button id="logout-btn-mobile" class="text-gray-300 hover:bg-gray-700 hover:text-white block w-full text-left px-3 py-2 rounded-lg text-base font-medium">Sair</button></div>`;
-        desktopContainer.innerHTML = loggedInHTML;
-        mobileContainer.innerHTML = loggedInHTMLMobile;
+        // HTML para o Header (desktop/tablet) - Apenas o botão de Sair
+        const loggedInDesktopHTML = `<button id="logout-btn" class="text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg text-sm font-medium">Sair</button>`;
+        
+        // HTML para a Sidebar (mobile/desktop) - Email + Botão Sair
+        const loggedInSidebarHTML = `
+            <div class="flex flex-col space-y-2">
+                <span class="text-gray-300 text-sm truncate" title="${user.email}">${user.email}</span>
+                <button id="logout-btn-sidebar" class="text-gray-300 hover:bg-gray-700 hover:text-white block w-full text-left px-3 py-2 rounded-lg text-sm font-medium">Sair</button>
+            </div>`;
+        
+        desktopContainer.innerHTML = loggedInDesktopHTML;
+        sidebarContainer.innerHTML = loggedInSidebarHTML;
+        
+        // Adiciona listener para o NOVO botão de logout na sidebar
+        const logoutBtnSidebar = document.getElementById('logout-btn-sidebar');
+        if (logoutBtnSidebar) {
+            // Re-usa a função handleAuth importada
+            logoutBtnSidebar.addEventListener('click', () => handleAuth('logout'));
+        }
+
     } else {
-        const loggedOutHTML = `<button id="show-login-modal-btn" class="text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-lg text-sm font-medium">Minha Conta</button>`;
-        const loggedOutHTMLMobile = `<button id="show-login-modal-btn-mobile" class="text-gray-300 hover:bg-gray-700 hover:text-white block w-full text-left px-3 py-2 rounded-lg text-base font-medium">Minha Conta</button>`;
-        desktopContainer.innerHTML = loggedOutHTML;
-        mobileContainer.innerHTML = loggedOutHTMLMobile;
+        // HTML para o Header (desktop/tablet)
+        const loggedOutDesktopHTML = `<button id="show-login-modal-btn" class="text-gray-600 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg text-sm font-medium">Minha Conta</button>`;
+        
+        // HTML para a Sidebar (mobile/desktop)
+        const loggedOutSidebarHTML = `<button id="show-login-modal-btn-sidebar" class="text-gray-300 hover:bg-gray-700 hover:text-white block w-full text-left px-3 py-2 rounded-lg text-sm font-medium">Minha Conta</button>`;
+        
+        desktopContainer.innerHTML = loggedOutDesktopHTML;
+        sidebarContainer.innerHTML = loggedOutSidebarHTML;
+
+        // Adiciona listener para o NOVO botão de login na sidebar
+        const loginBtnSidebar = document.getElementById('show-login-modal-btn-sidebar');
+        if (loginBtnSidebar) {
+            // Re-usa a função openAuthModal importada
+            loginBtnSidebar.addEventListener('click', openAuthModal);
+        }
     }
 }
-
