@@ -290,21 +290,35 @@ function handleReviewTableSelection(checkbox) {
 
 
 export function setupAllEventListeners() {
-    // Listener para o botão hamburger do menu mobile
-    if (DOM.hamburgerBtn) {
-        DOM.hamburgerBtn.addEventListener('click', (event) => {
-            event.stopPropagation(); // Impede que o clique se propague para o listener do document
-            const isExpanded = DOM.hamburgerBtn.getAttribute('aria-expanded') === 'true';
-            DOM.hamburgerBtn.setAttribute('aria-expanded', !isExpanded);
-            DOM.mobileMenu.classList.toggle('hidden');
+    // Listener para o botão hamburger do menu mobile (REMOVIDO)
+    // if (DOM.hamburgerBtn) { ... }
+
+    // NOVO: Listener para o botão de toggle da sidebar
+    if (DOM.sidebarToggleBtn) {
+        DOM.sidebarToggleBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            
+            if (window.innerWidth < 768) {
+                // Lógica mobile: usa overlay
+                document.body.classList.toggle('sidebar-open-mobile');
+            } else {
+                // Lógica desktop: empurra o conteúdo
+                document.body.classList.toggle('sidebar-collapsed');
+            }
         });
     }
+
 
     document.addEventListener('click', async (event) => {
         const target = event.target;
         const targetId = target.id;
         
         // --- Lógica de fechar menus (clique fora) ---
+        
+        // NOVO: Fecha a sidebar mobile se clicar fora dela (no overlay)
+        if (document.body.classList.contains('sidebar-open-mobile') && !target.closest('#sidebar-nav') && !target.closest('#sidebar-toggle-btn')) {
+            document.body.classList.remove('sidebar-open-mobile');
+        }
 
         // Esconde os menus de caderno se o clique for fora
         // ===== INÍCIO DA MODIFICAÇÃO: Também esconde .folder-menu-btn =====
@@ -324,13 +338,8 @@ export function setupAllEventListeners() {
         }
         // ===== FIM DA MODIFICAÇÃO =====
 
-        // Esconde o menu mobile se o clique for fora dele
-        if (!target.closest('#mobile-menu') && !target.closest('#hamburger-btn')) {
-            if (DOM.mobileMenu && !DOM.mobileMenu.classList.contains('hidden')) {
-                DOM.mobileMenu.classList.add('hidden');
-                DOM.hamburgerBtn.setAttribute('aria-expanded', 'false');
-            }
-        }
+        // Esconde o menu mobile (LÓGICA ANTIGA REMOVIDA)
+        // if (!target.closest('#mobile-menu') && !target.closest('#hamburger-btn')) { ... }
         
         // Fecha os seletores customizados se o clique for fora deles
         if (!target.closest('.custom-select-container')) {
@@ -392,7 +401,8 @@ export function setupAllEventListeners() {
         // ===== FIM DA MODIFICAÇÃO =====
 
         // --- Auth ---
-        else if (target.closest('#show-login-modal-btn') || target.closest('#login-from-empty')) {
+        // MODIFICADO: Remove -mobile, aponta para os botões nos novos locais
+        else if (target.closest('#show-login-modal-btn') || target.closest('#login-from-empty') || target.closest('#show-login-modal-btn-sidebar')) {
             openAuthModal();
         } else if (targetId === 'login-btn') {
             await handleAuth('login');
@@ -400,7 +410,7 @@ export function setupAllEventListeners() {
             await handleAuth('register');
         } else if (targetId === 'google-login-btn') {
             await handleGoogleAuth();
-        } else if (target.closest('#logout-btn') || target.closest('#logout-btn-mobile')) {
+        } else if (target.closest('#logout-btn') || target.closest('#logout-btn-sidebar')) { // MODIFICADO
             await handleAuth('logout');
         }
 
