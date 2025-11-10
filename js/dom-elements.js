@@ -9,10 +9,16 @@ export function initDOM() {
     DOM.revisaoView = document.getElementById('revisao-view');
     DOM.estatisticasView = document.getElementById('estatisticas-view');
 
-    // Navigation
+    // Navigation (MODIFICADO)
     DOM.mainNav = document.getElementById('main-nav');
-    DOM.mobileMenu = document.getElementById('mobile-menu');
-    DOM.hamburgerBtn = document.getElementById('hamburger-btn');
+    // DOM.mobileMenu = document.getElementById('mobile-menu'); // REMOVIDO
+    // DOM.hamburgerBtn = document.getElementById('hamburger-btn'); // REMOVIDO
+
+    // NOVOS elementos da Sidebar
+    DOM.sidebarNav = document.getElementById('sidebar-nav');
+    DOM.mainContentWrapper = document.getElementById('main-content-wrapper');
+    DOM.sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+
 
     // Stats Cards (Home)
     DOM.statsTotalQuestionsEl = document.getElementById('stats-total-questions');
@@ -65,10 +71,12 @@ export function initDOM() {
     DOM.startSelectedReviewBtn = document.getElementById('start-selected-review-btn');
 
 
-    // Auth Modal
+    // Auth Modal (MODIFICADO)
     DOM.authModal = document.getElementById('auth-modal');
     DOM.userAccountContainer = document.getElementById('user-account-container');
-    DOM.userAccountContainerMobile = document.getElementById('user-account-container-mobile');
+    // DOM.userAccountContainerMobile = document.getElementById('user-account-container-mobile'); // REMOVIDO
+    // NOVO container de conta na sidebar
+    DOM.userAccountSidebarContainer = document.getElementById('user-account-sidebar-container');
     DOM.emailInput = document.getElementById('email-input');
     DOM.passwordInput = document.getElementById('password-input');
     DOM.authError = document.getElementById('auth-error');
