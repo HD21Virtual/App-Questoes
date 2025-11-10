@@ -92,7 +92,6 @@ function renderUnansweredQuestion() {
         return `
             <div data-option="${option}" class="option-item group flex items-center p-2 rounded-lg cursor-pointer transition duration-200">
                <div class="action-icon-container w-8 h-8 flex-shrink-0 flex items-center justify-center mr-1">
-                    <!-- MODIFICAÇÃO: Ícone da tesoura visível no mobile (opacity-100) e hover no desktop (lg:opacity-0 lg:group-hover:opacity-100) -->
                     <div class="discard-btn opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200 hover:bg-blue-100 rounded-full p-1.5">
                         ${scissorIconSVG}
                     </div>
@@ -111,8 +110,7 @@ function renderUnansweredQuestion() {
             ${optionsHtml}
         </div>
         <div id="card-footer" class="mt-6 flex items-center">
-             <!-- O botão de resolver será adicionado se não for respondido -->
-        </div>
+             </div>
         <div id="commentary-container" class="hidden mt-6"></div>
     `;
     
@@ -290,14 +288,39 @@ export async function displayQuestion() {
     const userAnswerData = state.userAnswers.get(question.id);
 
     questionCounterTop.innerHTML = `Questão ${state.currentQuestionIndex + 1} de ${state.filteredQuestions.length}`;
-    questionInfoContainer.innerHTML = `
+    
+    // ===== INÍCIO DA MODIFICAÇÃO =====
+    // Constrói a hierarquia de Matéria e Assuntos
+    let hierarchyHtml = `
         <div class="flex space-x-1">
           <span class="text-gray-700">Matéria:</span><a href="#" class="text-blue-600 hover:underline">${question.materia}</a>
         </div>
-        <div class="flex space-x-1">
-          <span class="text-gray-700">Assunto:</span><a href="#" class="text-blue-600 hover:underline">${question.assunto}</a>
-        </div>
     `;
+
+    // Constrói a hierarquia de assuntos, tratando valores nulos
+    const parts = [];
+    if (question.assunto) {
+        parts.push(`<a href="#" class="text-blue-600 hover:underline">${question.assunto}</a>`);
+    }
+    if (question.subAssunto) {
+        parts.push(`<a href="#" class="text-blue-600 hover:underline">${question.subAssunto}</a>`);
+    }
+    if (question.subSubAssunto) {
+        parts.push(`<a href="#" class="text-blue-600 hover:underline">${question.subSubAssunto}</a>`);
+    }
+
+    // Monta a string de "Assunto" com " > "
+    if (parts.length > 0) {
+         hierarchyHtml += `
+            <div class="flex items-start space-x-1">
+              <span class="text-gray-700 flex-shrink-0">Assunto:</span>
+              <span class="leading-relaxed"> ${parts.join('<span class="text-gray-500 mx-1">&gt;</span>')} </span>
+            </div>
+        `;
+    }
+    
+    questionInfoContainer.innerHTML = hierarchyHtml;
+    // ===== FIM DA MODIFICAÇÃO =====
 
     let toolbarHTML = `
         <button class="toolbar-btn flex items-center hover:text-blue-600 transition-colors" title="Gabarito Comentado"><i class="fas fa-graduation-cap mr-2"></i><span class="toolbar-text">Gabarito Comentado</span></button>
@@ -371,4 +394,6 @@ export function renderQuestionListForAdding(questions, existingQuestionIds) {
             </div>
         `;
     }).join('');
+}
+
 }
