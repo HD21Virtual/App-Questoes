@@ -309,11 +309,30 @@ export function setupAllEventListeners() {
             } else {
                 // Lógica desktop: empurra o conteúdo
                 document.body.classList.toggle('sidebar-collapsed');
+
+                // ===== INÍCIO DA MODIFICAÇÃO (CORREÇÃO DE RESPONSIVIDADE) =====
+                // Aguarda o fim da animação da sidebar (300ms) para redimensionar os gráficos.
+                // Usar transitionend se provou instável, um timeout é mais determinístico.
+                setTimeout(() => {
+                    // Verifica se a aba "Início" está visível
+                    if (DOM.inicioView && !DOM.inicioView.classList.contains('hidden')) {
+                        resizeHomeCharts();
+                    }
+                    
+                    // Verifica se a aba "Estatísticas" está visível
+                    if (DOM.estatisticasView && !DOM.estatisticasView.classList.contains('hidden')) {
+                       resizeStatsCharts();
+                    }
+                }, 350); // A transição é de 300ms (duration-300), 350ms dá uma margem.
+                // ===== FIM DA MODIFICAÇÃO =====
             }
         });
     }
 
-    // ===== INÍCIO DA MODIFICAÇÃO: Listener para o fim da transição da sidebar =====
+    // ===== INÍCIO DA MODIFICAÇÃO: Listener para o fim da transição da sidebar (REMOVIDO) =====
+    // A lógica foi movida para dentro do 'click' handler com um setTimeout,
+    // que é mais confiável para este caso.
+    /*
     if (DOM.mainContentWrapper) {
         DOM.mainContentWrapper.addEventListener('transitionend', () => {
             // Verifica se a aba "Início" está visível
@@ -327,6 +346,7 @@ export function setupAllEventListeners() {
             }
         });
     }
+    */
     // ===== FIM DA MODIFICAÇÃO =====
 
 
