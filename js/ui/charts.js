@@ -694,3 +694,31 @@ export function renderEvolutionChart(performanceLog, startDate, endDate) {
     });
 }
 // ===== FIM DA MODIFICAÇÃO =====
+
+// ===== INÍCIO DA MODIFICAÇÃO: Novas funções exportadas =====
+/**
+ * Redimensiona os gráficos da tela Início.
+ * Deve ser chamado após a animação da sidebar.
+ */
+export function resizeHomeCharts() {
+    if (homePerformanceChart) {
+        homePerformanceChart.resize();
+    }
+    if (weeklyChartInstance) {
+        weeklyChartInstance.resize();
+    }
+}
+
+/**
+ * Redimensiona os gráficos da tela Estatísticas.
+ * Deve ser chamado após a animação da sidebar.
+ */
+export function resizeStatsCharts() {
+    if (statsPagePerformanceChart) {
+        statsPagePerformanceChart.resize();
+    }
+    if (evolutionChart) {
+        evolutionChart.resize();
+    }
+}
+// ===== FIM DA MODIFICAÇÃO =====
