@@ -57,7 +57,16 @@ export function getState() {
 }
 
 export function getActiveContainer() {
-    return state.currentCadernoId ? DOM.savedCadernosListContainer : DOM.vadeMecumContentArea;
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // Prioriza a sessão de revisão, depois cadernos, depois vade mecum
+    if (state.isReviewSession) {
+        return DOM.reviewQuestionContainer;
+    } else if (state.currentCadernoId) {
+    // ===== FIM DA MODIFICAÇÃO =====
+        return DOM.savedCadernosListContainer;
+    } else {
+        return DOM.vadeMecumContentArea;
+    }
 }
 
 export function addUnsubscribe(unsubscribe) {
@@ -88,6 +97,7 @@ export function resetStateOnLogout() {
         isMoveModeActive: false, // Reseta o modo de mover ao deslogar
         itemToPreselectOnMove: null, // <-- ADICIONADO
         // ===== FIM DA MODIFICAÇÃO =====
+        isReviewSession: false, // <-- ADICIONADO: Reseta a sessão de revisão
     };
 }
 
