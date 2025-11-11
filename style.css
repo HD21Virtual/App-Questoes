@@ -446,9 +446,8 @@ body.sidebar-open-mobile #sidebar-toggle-btn {
     color: #6b7280; /* text-gray-500 (para ver no fundo claro do overlay) */
     box-shadow: none;
 }
-body.sidebar-open-mobile #sidebar-toggle-btn:hover {
-    background-color: rgba(243, 244, 246, 0.5); /* gray-100 com opacidade */
-}
+/* MODIFICAÇÃO: Removido o :hover */
+/* body.sidebar-open-mobile #sidebar-toggle-btn:hover { ... } */
 
 /* Em telas de desktop (md) e maiores */
 @media (min-width: 768px) {
@@ -458,11 +457,7 @@ body.sidebar-open-mobile #sidebar-toggle-btn:hover {
         color: #D1D5DB; /* text-gray-300 (para ver no fundo escuro do menu) */
         box-shadow: none;
     }
-    body:not(.sidebar-collapsed) #sidebar-toggle-btn:hover {
-        background-color: rgba(75, 85, 99, 0.5); /* gray-600 com opacidade */
-        color: white;
-    }
+    /* MODIFICAÇÃO: Removido o :hover */
+    /* body:not(.sidebar-collapsed) #sidebar-toggle-btn:hover { ... } */
 }
 /* === FIM DA MODIFICAÇÃO === */
-
-
