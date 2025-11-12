@@ -377,10 +377,7 @@ async function updateNavigation() {
 
 
 export function renderQuestionListForAdding(questions, existingQuestionIds) {
-    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-    // const questionsContainer = getActiveContainer().querySelector('#questions-container');
-    const questionsContainer = getActiveContainer(); // Agora escreve direto no container
-    // ===== FIM DA MODIFICAÇÃO =====
+    const questionsContainer = getActiveContainer().querySelector('#questions-container');
     if(!questionsContainer) return;
 
     if (questions.length === 0) {
