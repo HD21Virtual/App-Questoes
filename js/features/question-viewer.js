@@ -377,7 +377,10 @@ async function updateNavigation() {
 
 
 export function renderQuestionListForAdding(questions, existingQuestionIds) {
-    const questionsContainer = getActiveContainer().querySelector('#questions-container');
+    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
+    // const questionsContainer = getActiveContainer().querySelector('#questions-container');
+    const questionsContainer = getActiveContainer(); // Agora escreve direto no container
+    // ===== FIM DA MODIFICAÇÃO =====
     if(!questionsContainer) return;
 
     if (questions.length === 0) {
@@ -395,4 +398,3 @@ export function renderQuestionListForAdding(questions, existingQuestionIds) {
         `;
     }).join('');
 }
-
