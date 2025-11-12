@@ -6,9 +6,7 @@ import { navigateToView } from '../ui/navigation.js';
 import { displayQuestion } from './question-viewer.js';
 import { generateStatsForQuestions } from './stats.js';
 import { showItemStatsModal, openNameModal } from '../ui/modal.js';
-// ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-import { clearAllFilters, applyFilters } from './filter.js';
-// ===== FIM DA MODIFICAÇÃO =====
+import { applyFilters } from './filter.js';
 import { removeQuestionIdFromCaderno as removeQuestionIdFromFirestore, addQuestionIdsToCaderno as addQuestionIdsToFirestore } from '../services/firestore.js';
 
 /**
@@ -33,14 +31,6 @@ async function renderCadernoContentView() {
         await renderFoldersAndCadernos(); 
         return; 
     }
-
-    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-    // Garante que o filtro e o banner não estejam visíveis ao renderizar o conteúdo do caderno
-    if (DOM.filterCard) DOM.filterCard.classList.add('hidden');
-    if (DOM.addQuestionsBanner) DOM.addQuestionsBanner.classList.add('hidden');
-    // Garante que o container principal está visível
-    DOM.savedCadernosListContainer.classList.remove('hidden');
-    // ===== FIM DA MODIFICAÇÃO =====
 
     DOM.cadernosViewTitle.textContent = caderno.name;
     DOM.backToFoldersBtn.classList.remove('hidden');
@@ -413,11 +403,6 @@ export async function renderFoldersAndCadernos() {
     // ===== FIM DA MODIFICAÇÃO =====
 
     DOM.savedCadernosListContainer.innerHTML = '';
-    // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-    // Garante que o container está visível (caso estivesse escondido pelo modo de adição)
-    DOM.savedCadernosListContainer.classList.remove('hidden');
-    // ===== FIM DA MODIFICAÇÃO =====
-
 
     if (state.currentCadernoId) {
         await renderCadernoContentView();
@@ -614,32 +599,25 @@ export function handleBackToFolders() {
 }
 
 // Initiates the mode to add questions to the currently opened notebook.
-// ===== INÍCIO DA MODIFICAÇÃO: Função agora é async e modificada para o novo fluxo =====
+// ===== INÍCIO DA MODIFICAÇÃO: Função agora é async =====
 export async function handleAddQuestionsToCaderno() {
+// ===== FIM DA MODIFICAÇÃO =====
     const caderno = state.userCadernos.find(c => c.id === state.currentCadernoId);
     if (!caderno) return;
 
-    // Não navega mais. Mostra os elementos na view atual.
-    DOM.savedCadernosListContainer.innerHTML = '<div class="text-center p-8"><i class="fas fa-spinner fa-spin text-2xl text-gray-500"></i><p class="mt-2">Carregando questões...</p></div>'; // Limpa a view atual
-    DOM.filterCard.classList.remove('hidden'); // Mostra o filtro
-    DOM.addQuestionsBanner.classList.remove('hidden'); // Mostra o banner
-    DOM.addQuestionsBannerText.textContent = `Selecione questões para adicionar ao caderno "${caderno.name}".`;
-
     setState('isAddingQuestionsMode', { active: true, cadernoId: state.currentCadernoId });
-    
-    // Limpa os filtros e aplica, o que vai chamar renderQuestionListForAdding
-    clearAllFilters(); 
+    DOM.addQuestionsBanner.classList.remove('hidden');
+    DOM.addQuestionsBannerText.textContent = `Selecione questões para adicionar ao caderno "${caderno.name}".`;
+    // ===== INÍCIO DA MODIFICAÇÃO: Adicionado await =====
+    await navigateToView('vade-mecum-view', false);
+    // ===== FIM DA MODIFICAÇÃO =====
 }
-// ===== FIM DA MODIFICAÇÃO =====
 
 // Exits the "add questions" mode.
 export function exitAddMode() {
     if (state.isAddingQuestionsMode.active) {
         setState('isAddingQuestionsMode', { active: false, cadernoId: null });
         DOM.addQuestionsBanner.classList.add('hidden');
-        // ===== INÍCIO DA MODIFICAÇÃO (SOLICITAÇÃO DO USUÁRIO) =====
-        if (DOM.filterCard) DOM.filterCard.classList.add('hidden'); // Esconde o filtro global
-        // ===== FIM DA MODIFICAÇÃO =====
         DOM.filterBtn.textContent = 'Filtrar questões';
         DOM.filterBtn.disabled = false;
         
@@ -649,16 +627,16 @@ export function exitAddMode() {
 }
 
 // Cancels the "add questions" process and returns to the notebooks view.
-// ===== INÍCIO DA MODIFICAÇÃO: Função agora é async e modificada para o novo fluxo =====
+// ===== INÍCIO DA MODIFICAÇÃO: Função agora é async =====
 export async function cancelAddQuestions() {
-    exitAddMode();
-    // Re-renderiza a view do caderno para mostrar as questões originais
-    await renderFoldersAndCadernos();
-}
 // ===== FIM DA MODIFICAÇÃO =====
+    exitAddMode();
+    // ===== INÍCIO DA MODIFICAÇÃO: Adicionado await =====
+    await navigateToView('cadernos-view');
+    // ===== FIM DA MODIFICAÇÃO =====
+}
 
 // Adds filtered questions to the current notebook.
-// ===== INÍCIO DA MODIFICAÇÃO: Função modificada para o novo fluxo =====
 export async function addFilteredQuestionsToCaderno() {
     if (!state.isAddingQuestionsMode.active || !state.currentUser) return;
 
@@ -683,10 +661,10 @@ export async function addFilteredQuestionsToCaderno() {
     exitAddMode();
     setState('isNavigatingBackFromAddMode', true); // Flag to prevent view reset
     setState('currentCadernoId', cadernoId);
-    // Re-renderiza a view do caderno para mostrar a lista atualizada
-    await renderFoldersAndCadernos();
+    // ===== INÍCIO DA MODIFICAÇÃO: Adicionado await =====
+    await navigateToView('cadernos-view');
+    // ===== FIM DA MODIFICAÇÃO =====
 }
-// ===== FIM DA MODIFICAÇÃO =====
 
 // Removes a specific question from the currently opened notebook.
 export async function removeQuestionFromCaderno(questionId) {
