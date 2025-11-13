@@ -4,7 +4,7 @@ import DOM from '../dom-elements.js';
 
 // Chart.js e o plugin datalabels são carregados globalmente pelo index.html
 // Aqui, apenas registramos o plugin para que o Chart.js possa usá-lo.
-if (window.ChartDataLabels) {
+if (window.ChartDataLabels && window.Chart) {
     Chart.register(window.ChartDataLabels);
 }
 
@@ -13,7 +13,9 @@ let performanceChart = null;
 let homePerformanceChart = null;
 let weeklyChartInstance = null;
 let statsPagePerformanceChart = null;
+
 // ===== INÍCIO DA MODIFICAÇÃO =====
+// A variável agora armazena a instância do ApexCharts
 let evolutionChart = null;
 // ===== FIM DA MODIFICAÇÃO =====
 
@@ -402,8 +404,10 @@ export function renderStatsPagePerformanceChart(correct, incorrect) {
 
 
 // ===== INÍCIO DA MODIFICAÇÃO =====
+
 /**
  * Processa o log de desempenho bruto em dados agrupados para o gráfico de evolução.
+ * Esta versão é simplificada para retornar apenas os dados brutos.
  * @param {Array} performanceLog - O log de desempenho filtrado (pode ser grande).
  * @param {Date} startDate - A data de início do filtro.
  * @param {Date} endDate - A data de fim do filtro.
@@ -418,7 +422,6 @@ function processEvolutionData(performanceLog, startDate, endDate, metric = 'reso
     }
 
     // 2. Define o intervalo de tempo
-    // Se 'Tudo' (startDate nulo), define um padrão (ex: últimos 6 meses)
     let start = startDate;
     let end = endDate;
     
@@ -459,8 +462,8 @@ function processEvolutionData(performanceLog, startDate, endDate, metric = 'reso
         // Cria rótulos amigáveis
         if (periods <= 15) { // Se for período curto (ex: 7 dias), mostra data a data
              labels.push(formatDate(periodStart));
-        } else { // Se for longo, mostra intervalos
-            labels.push(`${formatDate(periodStart)} a ${formatDate(periodEnd)}`);
+        } else { // Se for longo, mostra só a data de início do período
+            labels.push(`${formatDate(periodStart)}`);
         }
     }
 
@@ -493,7 +496,6 @@ function processEvolutionData(performanceLog, startDate, endDate, metric = 'reso
 
     // 5. Formata os datasets para o Chart.js
     let datasets;
-    // --- MODIFICAÇÃO: Lógica para 'desempenho' gerar duas linhas ---
     if (metric === 'desempenho') {
         const correctPercentageData = periodData.map(p => p.total > 0 ? (p.correct / p.total) * 100 : 0);
         const incorrectPercentageData = periodData.map(p => p.total > 0 ? (p.incorrect / p.total) * 100 : 0);
@@ -501,27 +503,14 @@ function processEvolutionData(performanceLog, startDate, endDate, metric = 'reso
             {
                 label: 'Acertos (%)',
                 data: correctPercentageData,
-                borderColor: '#22c55e', // green-500
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#22c55e',
-                pointRadius: 4,
-                pointHoverRadius: 6
+                color: '#22c55e' // Verde
             },
              {
                 label: 'Erros (%)',
                 data: incorrectPercentageData,
-                borderColor: '#ef4444', // red-500
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#ef4444',
-                pointRadius: 4,
-                pointHoverRadius: 6
+                color: '#ef4444' // Vermelho
             }
         ];
-    // --- FIM DA MODIFICAÇÃO ---
     } else { // Padrão: 'resolucoes'
         const acertosData = periodData.map(p => p.correct);
         const errosData = periodData.map(p => p.incorrect);
@@ -529,24 +518,12 @@ function processEvolutionData(performanceLog, startDate, endDate, metric = 'reso
             {
                 label: 'Acertos',
                 data: acertosData,
-                borderColor: '#22c55e', // green-500
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#22c55e',
-                pointRadius: 4,
-                pointHoverRadius: 6
+                color: '#22c55e' // Verde
             },
             {
                 label: 'Erros',
                 data: errosData,
-                borderColor: '#ef4444', // red-500
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                fill: true,
-                tension: 0.4,
-                pointBackgroundColor: '#ef4444',
-                pointRadius: 4,
-                pointHoverRadius: 6
+                color: '#ef4444' // Vermelho
             }
         ];
     }
@@ -555,19 +532,20 @@ function processEvolutionData(performanceLog, startDate, endDate, metric = 'reso
 }
 
 /**
- * Renderiza o gráfico de evolução com base nos dados filtrados.
+ * Renderiza o gráfico de evolução com base nos dados filtrados, usando ApexCharts.
  * @param {Array} performanceLog - O log de desempenho JÁ FILTRADO por matéria/assunto.
  * @param {Date} startDate - A data de início do filtro de período.
  * @param {Date} endDate - A data de fim do filtro de período.
  */
 export function renderEvolutionChart(performanceLog, startDate, endDate) {
-    const canvas = DOM.evolutionChartCanvas;
-    if (!canvas) return;
+    const container = DOM.evolutionChartContainer;
+    if (!container) return;
 
-    const ctx = canvas.getContext('2d');
-    
+    // Limpa o container e destrói o gráfico antigo
+    container.innerHTML = '';
     if (evolutionChart) {
         evolutionChart.destroy();
+        evolutionChart = null;
     }
     
     // 1. Determina a métrica (Resoluções vs. Desempenho)
@@ -575,7 +553,6 @@ export function renderEvolutionChart(performanceLog, startDate, endDate) {
     const metric = metricRadio ? metricRadio.value : 'resolucoes';
 
     // 2. Determina o número de períodos
-    // Se for menos de 15 dias, agrupa por dia
     let periods = 10; // Padrão
     let start = startDate;
     let end = endDate;
@@ -590,108 +567,129 @@ export function renderEvolutionChart(performanceLog, startDate, endDate) {
     const timeDiff = end.getTime() - start.getTime();
     const dayDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
-    if (dayDiff <= 15) {
+    if (dayDiff <= 15 && dayDiff > 0) {
         periods = dayDiff; // Agrupa por dia
     }
     
-    // 3. Processa os dados
+    // 3. Processa os dados (usando a nova função simplificada)
     const { labels, datasets } = processEvolutionData(performanceLog, start, end, metric, periods);
 
     // 4. Verifica se há dados para exibir
     const hasData = datasets.length > 0 && datasets.some(ds => ds.data.some(d => d > 0));
 
     if (labels.length === 0 || !hasData) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.font = "16px 'Inter', sans-serif";
-        ctx.fillStyle = "#9ca3af";
-        // ===== INÍCIO DA MODIFICAÇÃO =====
-        ctx.fillText("Não foram encontradas resoluções com o filtro selecionado.", canvas.width / 2, canvas.height / 2);
-        // ===== FIM DA MODIFICAÇÃO =====
-        ctx.restore();
+        container.innerHTML = `
+            <div class="flex items-center justify-center w-full h-96 text-gray-500">
+                Não foram encontradas resoluções com o filtro selecionado.
+            </div>
+        `;
         return;
     }
     
-    // 5. Configurações do gráfico
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
-                align: 'center',
-                labels: {
-                    usePointStyle: false, 
-                    boxWidth: 20,
-                    // ===== ALTERAÇÃO 3 INÍCIO: Adiciona generateLabels =====
-                    // Função para garantir que a cor de preenchimento da legenda
-                    // seja a mesma da borda da linha.
-                    generateLabels: function(chart) {
-                        const originalLabels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                        originalLabels.forEach(label => {
-                            // Define fillStyle para ser igual ao strokeStyle (cor da linha)
-                            label.fillStyle = label.strokeStyle; 
-                        });
-                        return originalLabels;
+    // 5. Mapeia dados para o formato ApexCharts
+    const series = datasets.map(ds => ({
+        name: ds.label,
+        data: ds.data
+    }));
+
+    const colors = datasets.map(ds => ds.color);
+
+    // 6. Configurações do ApexCharts
+    const options = {
+        series: series,
+        chart: {
+            type: 'area', // Usando 'area' para um visual mais preenchido
+            height: 384, // h-96
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: true
+                },
+            },
+            zoom: {
+                enabled: false // Desabilita o zoom de arrastar, mantendo o botão de reset
+            },
+        },
+        colors: colors,
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            curve: 'smooth',
+            width: 3
+        },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.4,
+                opacityTo: 0.1,
+                stops: [0, 90, 100]
+            }
+        },
+        xaxis: {
+            categories: labels,
+            labels: {
+                style: {
+                    colors: '#6b7280', // gray-500
+                }
+            }
+        },
+        yaxis: {
+            labels: {
+                style: {
+                    colors: '#6b7280', // gray-500
+                },
+                formatter: (value) => {
+                    if (value === null || value === undefined) return value;
+                    if (metric === 'desempenho') {
+                        return value.toFixed(0) + '%';
                     }
-                    // ===== ALTERAÇÃO 3 FIM =====
+                    return value.toFixed(0); // Sem decimais para 'resolucoes'
                 }
             },
-            tooltip: {
-                mode: 'index',
-                intersect: false,
-                callbacks: {}
-            },
-            datalabels: {
-                display: false // Desabilitado para um visual mais limpo
+            min: 0
+        },
+        legend: {
+            position: 'top',
+            horizontalAlign: 'center',
+            labels: {
+                colors: '#4b5563' // gray-600
             }
         },
-        scales: {
+        tooltip: {
             x: {
-                grid: { color: '#e5e7eb' }, 
-                ticks: { color: '#6b7280' } // gray-500
+                show: true,
             },
             y: {
-                beginAtZero: true,
-                grid: { color: '#e5e7eb' }, // gray-200
-                ticks: { color: '#6b7280' } // gray-500
+                formatter: (value) => {
+                    if (value === null || value === undefined) return value;
+                    if (metric === 'desempenho') {
+                        return value.toFixed(0) + '%';
+                    }
+                    return value.toFixed(0);
+                }
             }
         },
-        interaction: {
-            intersect: false,
-            mode: 'index',
+        grid: {
+            borderColor: '#e5e7eb' // gray-200
         }
     };
     
-    // 6. Adiciona formatação de '%' se a métrica for 'desempenho'
+    // 7. Adiciona formatação de '%' se a métrica for 'desempenho'
     if (metric === 'desempenho') {
-        chartOptions.scales.y.ticks.callback = function (value) {
-            return value.toFixed(0) + '%'; // Ajustado para não mostrar decimais
-        };
-         chartOptions.scales.y.max = 100; // Define o máximo do eixo Y para 100%
-        chartOptions.plugins.tooltip.callbacks.label = function (context) {
-            let label = context.dataset.label || '';
-            if (label) {
-                label += ': ';
-            }
-            if (context.parsed.y !== null) {
-                label += context.parsed.y.toFixed(0) + '%'; // Ajustado para não mostrar decimais
-            }
-            return label;
-        };
+        options.yaxis.max = 100; // Define o máximo do eixo Y para 100%
     }
 
-    // 7. Renderiza o gráfico
-    evolutionChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: datasets
-        },
-        options: chartOptions
-    });
+    // 8. Renderiza o gráfico
+    evolutionChart = new ApexCharts(container, options);
+    evolutionChart.render();
 }
 // ===== FIM DA MODIFICAÇÃO =====
 
@@ -717,8 +715,7 @@ export function resizeStatsCharts() {
     if (statsPagePerformanceChart) {
         statsPagePerformanceChart.resize();
     }
-    if (evolutionChart) {
-        evolutionChart.resize();
-    }
+    // A chamada de resize para o evolutionChart (ApexCharts) não é necessária
+    // ou não funciona da mesma forma que no Chart.js, por isso foi removida.
 }
 // ===== FIM DA MODIFICAÇÃO =====
