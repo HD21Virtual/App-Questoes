@@ -2,7 +2,8 @@ import { html, render } from 'https://cdn.jsdelivr.net/npm/lit-html@3.1.3/lit-ht
 import { Timestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 import { state, setState, clearSessionStats, subscribe } from '../state.js';
 import DOM from '../dom-elements.js';
-import { displayQuestion, renderAnsweredQuestion } from './question-viewer.js';
+// --- CORREÇÃO: Removida a importação de 'renderAnsweredQuestion' ---
+import { displayQuestion } from './question-viewer.js';
 import { updateStatsPageUI } from './stats.js';
 import { setSrsReviewItem, saveUserAnswer, updateQuestionHistory, logPerformanceEntry } from '../services/firestore.js';
 import { renderQuestionSolver } from "../ui/question-solver-ui.js";
@@ -96,7 +97,10 @@ export async function handleSrsFeedback(feedback) {
         await logPerformanceEntry(question, isCorrect);
     }
 
-    renderAnsweredQuestion(isCorrect, state.selectedAnswer, false);
+    // --- CORREÇÃO: Chamando a função correta 'displayQuestion' ---
+    // Esta função agora lerá o estado atualizado e renderizará a questão
+    // no modo "respondido" (isFreshAnswer: false).
+    await displayQuestion();
 
     setState('isUpdatingAnswer', false);
 }
