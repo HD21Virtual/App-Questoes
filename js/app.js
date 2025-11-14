@@ -8,10 +8,23 @@ import { setupMateriasEventListeners } from './features/materias.js';
 import { setupSrsEventListeners } from './features/srs.js';
 import { setupStatsEventListeners } from './features/stats.js';
 import { setupQuestionViewerEventListeners } from './features/question-viewer.js';
+// ===== INÍCIO DA CORREÇÃO =====
+import { renderQuestionSolver } from './ui/question-solver-ui.js';
+import DOM from './dom-elements.js';
+// ===== FIM DA CORREÇÃO =====
 
 async function main() {
     // 1. Initialize all DOM element references now that the page is loaded
     initDOM();
+
+    // ===== INÍCIO DA CORREÇÃO =====
+    // Renderiza a UI do solver na view principal (Vade Mecum)
+    // Isso garante que a view "Questões" use a mesma estrutura dinâmica
+    // que as views "Cadernos" e "Revisão".
+    if (DOM.vadeMecumContentArea) {
+        renderQuestionSolver(DOM.vadeMecumContentArea);
+    }
+    // ===== FIM DA CORREÇÃO =====
 
     // 2. Initialize authentication which sets up the user state and initial view
     initAuth();
